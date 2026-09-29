@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:adventureme/app/core/extensions/sizedbox_extension.dart';
 import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
 import 'package:adventureme/app/global/widgets/app_svg_icon.dart';
 import 'package:adventureme/app/global/widgets/app_text.dart';
 import 'package:adventureme/app/global/widgets/cached_image.dart';
@@ -13,17 +14,14 @@ import 'package:adventureme/gen/assets.gen.dart';
 import '../controllers/itinerary_controller.dart';
 
 class CompletedItineraryCard extends GetView<ItineraryController> {
-  const CompletedItineraryCard({
-    super.key,
-    required this.item,
-    this.onDetailsTap,
-  });
+  const CompletedItineraryCard({super.key, required this.trip});
 
-  final CompletedItinerary item;
-  final VoidCallback? onDetailsTap;
+  final TripListItem trip;
 
   @override
   Widget build(BuildContext context) {
+    final tracking = trip.trackingDisplay;
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w),
       decoration: BoxDecoration(
@@ -35,12 +33,19 @@ class CompletedItineraryCard extends GetView<ItineraryController> {
         children: [
           Stack(
             children: [
-              CachedImage(
-                imgUrl: item.imageUrl,
-                width: double.infinity,
-                height: 180.h,
-                fit: BoxFit.cover,
-              ),
+              trip.hasCover
+                  ? CachedImage(
+                      imgUrl: trip.coverUrl!,
+                      width: double.infinity,
+                      height: 180.h,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.asset(
+                      Assets.images.itinearyBgImage.path,
+                      width: double.infinity,
+                      height: 180.h,
+                      fit: BoxFit.cover,
+                    ),
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -63,7 +68,7 @@ class CompletedItineraryCard extends GetView<ItineraryController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppText(
-                      item.title,
+                      trip.title ?? 'Untitled Trip',
                       style: context.titleLarge.copyWith(
                         color: AppColor.white,
                         fontWeight: FontWeight.w700,
@@ -81,7 +86,7 @@ class CompletedItineraryCard extends GetView<ItineraryController> {
                         5.width,
                         Flexible(
                           child: AppText(
-                            '${item.location}  -  ${item.dateRange}',
+                            '${trip.destinedPlace ?? '--'}  -  ${controller.dateRange(trip)}',
                             style: context.labelSmall.copyWith(
                               color: AppColor.white,
                             ),
@@ -90,23 +95,25 @@ class CompletedItineraryCard extends GetView<ItineraryController> {
                         ),
                       ],
                     ),
-                    5.height,
-                    Row(
-                      children: [
-                        AppSvgIcon(
-                          Assets.icons.clockIcon,
-                          size: 13.sp,
-                          color: AppColor.white,
-                        ),
-                        5.width,
-                        AppText(
-                          item.trackingHours,
-                          style: context.labelSmall.copyWith(
+                    if (tracking != null && tracking.isNotEmpty) ...[
+                      5.height,
+                      Row(
+                        children: [
+                          AppSvgIcon(
+                            Assets.icons.clockIcon,
+                            size: 13.sp,
                             color: AppColor.white,
                           ),
-                        ),
-                      ],
-                    ),
+                          5.width,
+                          AppText(
+                            '$tracking Tracking',
+                            style: context.labelSmall.copyWith(
+                              color: AppColor.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -118,19 +125,19 @@ class CompletedItineraryCard extends GetView<ItineraryController> {
               children: [
                 GlobalButton(
                   text: 'View Details',
-                  onTap: onDetailsTap ?? () {},
+                  onTap: () => controller.onViewDetails(trip),
                   width: 130.w,
                   height: 35.h,
                 ),
                 const Spacer(),
                 _CircleAction(
                   icon: Icons.share_outlined,
-                  onTap: controller.onShare,
+                  onTap: () => controller.onShare(trip),
                 ),
                 10.width,
                 _CircleAction(
                   icon: Icons.qr_code_scanner_rounded,
-                  onTap: controller.onScan,
+                  onTap: () => controller.onScan(trip),
                 ),
               ],
             ),

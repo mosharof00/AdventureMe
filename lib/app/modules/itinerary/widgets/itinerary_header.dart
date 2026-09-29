@@ -17,6 +17,8 @@ import '../controllers/itinerary_controller.dart';
 class ItineraryHeader extends GetView<ItineraryController> {
   const ItineraryHeader({super.key});
 
+  static double get height => 280.h;
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -26,7 +28,7 @@ class ItineraryHeader extends GetView<ItineraryController> {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(8.r)),
           child: Image.asset(
             Assets.images.itinearyBgImage.path,
-            height: 300.h,
+            height: height,
             width: double.infinity,
             fit: BoxFit.cover,
           ),

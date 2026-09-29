@@ -3,6 +3,7 @@ import 'package:adventureme/app/core/network/handle_exceptions.dart';
 import 'package:adventureme/app/core/utils/helper_utils.dart';
 import 'package:adventureme/app/data/models/user_models/user_model.dart';
 import 'package:adventureme/app/data/repositories/auth_repository.dart';
+import 'package:adventureme/app/modules/itinerary/controllers/itinerary_controller.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
 
 class CountryExploredItem {
@@ -103,6 +104,11 @@ class HomeController extends GetxController {
   void onViewDetails() {}
   void onOpenStory() {}
   void onViewAll() {}
-  void onCreateStory() => Get.toNamed(Routes.CREATE_NEW_TRIP);
+  Future<void> onCreateStory() async {
+    final created = await Get.toNamed(Routes.CREATE_NEW_TRIP);
+    if (created != null && Get.isRegistered<ItineraryController>()) {
+      Get.find<ItineraryController>().refreshAll();
+    }
+  }
   void onProfileTap() {}
 }

@@ -26,7 +26,7 @@ class SplashController extends GetxController {
     }
 
     final isLoggedIn = await HelperUtils.checkLoginStatus()
-        .timeout(const Duration(seconds: 5), onTimeout: () => false);
+        .timeout(const Duration(seconds: 15), onTimeout: () => false);
 
     Get.offAllNamed(isLoggedIn ? Routes.MAIN_PAGE : Routes.LOGIN);
   }

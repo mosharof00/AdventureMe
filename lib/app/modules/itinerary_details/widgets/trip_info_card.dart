@@ -79,22 +79,22 @@ class TripInfoCard extends GetView<ItineraryDetailsController> {
 class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.status});
 
-  final TripStatus status;
+  final TripDetailsStatus status;
 
   @override
   Widget build(BuildContext context) {
     final (Color bg, Color fg, String label) = switch (status) {
-      TripStatus.pending => (
+      TripDetailsStatus.pending => (
         const Color(0xFFF5E6C8),
         const Color(0xFF8B6914),
         'Pending',
       ),
-      TripStatus.ongoing => (
+      TripDetailsStatus.ongoing => (
         const Color(0xFFDDF3E5),
         const Color(0xFF1E8E5A),
         'Ongoing',
       ),
-      TripStatus.completed => (
+      TripDetailsStatus.completed => (
         const Color(0xFFD5EEF0),
         AppColor.primary,
         'Completed',

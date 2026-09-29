@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:adventureme/app/core/constants/enums.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
+import 'package:adventureme/app/modules/itinerary/controllers/itinerary_controller.dart';
 import 'package:adventureme/app/global/widgets/app_bottom_sheet.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
 import 'package:adventureme/app/modules/itinerary_details/widgets/story_generating_dialog.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
 
-enum TripStatus { pending, ongoing, completed }
+enum TripDetailsStatus { pending, ongoing, completed }
 
 class TripCheckpoint {
   const TripCheckpoint({
@@ -40,42 +43,60 @@ class TrackingDay {
 }
 
 class ItineraryDetailsController extends GetxController {
-  late final TripStatus status;
+  late final TripDetailsStatus status;
+
+  /// Trip opened from the Itinerary list (details API not integrated yet).
+  TripListItem? trip;
 
   // ── Trip info ────────────────────────────────────────
-  final tripTitle = 'Florida Adventure';
-  final tripRoute = 'Starting: Florida | Destined: Brazil';
-  final tripDates = 'Mar 10 to Mar 13, 2026';
+  String tripTitle = 'Florida Adventure';
+  String tripRoute = 'Starting: Florida | Destined: Brazil';
+  String tripDates = 'Mar 10 to Mar 13, 2026';
 
   @override
   void onInit() {
     super.onInit();
     final arg = Get.arguments;
-    status = arg is TripStatus ? arg : TripStatus.pending;
+    if (arg is TripListItem) {
+      trip = arg;
+      status = switch (arg.status) {
+        TripStatus.completed => TripDetailsStatus.completed,
+        TripStatus.active || TripStatus.paused => TripDetailsStatus.ongoing,
+        _ => TripDetailsStatus.pending,
+      };
+      if (Get.isRegistered<ItineraryController>()) {
+        final itinerary = Get.find<ItineraryController>();
+        tripTitle = arg.title ?? tripTitle;
+        tripRoute = itinerary.route(arg);
+        tripDates = itinerary.dateRange(arg);
+      }
+    } else {
+      status = arg is TripDetailsStatus ? arg : TripDetailsStatus.pending;
+    }
   }
 
   // ── Status helpers ───────────────────────────────────
   String get statusLabel => switch (status) {
-    TripStatus.pending => 'Pending',
-    TripStatus.ongoing => 'Ongoing',
-    TripStatus.completed => 'Completed',
+    TripDetailsStatus.pending => 'Pending',
+    TripDetailsStatus.ongoing => 'Ongoing',
+    TripDetailsStatus.completed => 'Completed',
   };
 
-  bool get isPending => status == TripStatus.pending;
-  bool get isOngoing => status == TripStatus.ongoing;
-  bool get isCompleted => status == TripStatus.completed;
+  bool get isPending => status == TripDetailsStatus.pending;
+  bool get isOngoing => status == TripDetailsStatus.ongoing;
+  bool get isCompleted => status == TripDetailsStatus.completed;
 
   /// Elapsed / total time shown on the timer.
   String get timerText => switch (status) {
-    TripStatus.pending => '00:00:00',
-    TripStatus.ongoing => '32:12:54',
-    TripStatus.completed => '72:12:54',
+    TripDetailsStatus.pending => '00:00:00',
+    TripDetailsStatus.ongoing => '32:12:54',
+    TripDetailsStatus.completed => '72:12:54',
   };
 
   bool isDayDone(int index) => switch (status) {
-    TripStatus.pending => false,
-    TripStatus.ongoing => index < days.length - 1,
-    TripStatus.completed => true,
+    TripDetailsStatus.pending => false,
+    TripDetailsStatus.ongoing => index < days.length - 1,
+    TripDetailsStatus.completed => true,
   };
 
   /// Label of the photo button on a completed day card.

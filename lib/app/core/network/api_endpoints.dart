@@ -15,6 +15,7 @@ class ApiEndpoint {
   static const String login = '$authBase/login'; // post
   static const String me = '$authBase/me'; // get
   static const String logout = '$authBase/logout'; // post
+  static const String refresh = '$authBase/refresh'; // post (Bearer = current token)
   static const String changePassword = '$authBase/change-password'; // patch
   static const String updateProfile = '$authBase/profile'; // patch (multipart)
 
@@ -29,6 +30,7 @@ class ApiEndpoint {
     forgotPassword,
     resetPassword,
     logout,
+    refresh,
   ];
 
   /// Authenticated endpoints that also answer 401 for a wrong password, so a

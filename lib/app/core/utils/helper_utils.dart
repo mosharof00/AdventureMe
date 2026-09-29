@@ -8,6 +8,7 @@ import 'package:adventureme/app/global/widgets/global_loading.dart';
 import 'package:adventureme/app/modules/home/controllers/home_controller.dart';
 
 import '../../modules/main_page/controllers/main_page_controller.dart';
+import '../network/token_refresher.dart';
 import '../../routes/app_pages.dart';
 import '../services/local_store_service.dart';
 import '../services/secure_storage_service.dart';
@@ -35,6 +36,9 @@ class HelperUtils {
   static String userId = "";
   static String userRole = "";
 
+  /// Whether the current session is saved in secure storage (Remember Me);
+  /// refreshed tokens follow the same rule.
+  static bool _persisted = false;
 
 
   // -----------------------------
@@ -62,17 +66,38 @@ class HelperUtils {
     HelperUtils.token = token;
     HelperUtils.userRole = role ?? '';
     HelperUtils.isLogin = true;
+    _persisted = persist;
 
     Log.i(
       "✅ User set:\nUserId: $userId\nRole: ${role ?? ''}\nPersisted: $persist",
     );
   }
 
+  /// Swaps in a refreshed access token, saving it only if the session is
+  /// persisted.
+  static Future<void> updateToken(
+    String newToken, {
+    String? userId,
+    String? role,
+  }) async {
+    token = newToken;
+    if (userId != null && userId.isNotEmpty) HelperUtils.userId = userId;
+    if (role != null && role.isNotEmpty) userRole = role;
+
+    if (_persisted) {
+      final storage = SecureStorageService.instance;
+      await storage.setToken(newToken);
+      if (userId != null && userId.isNotEmpty) await storage.setUserID(userId);
+      if (role != null && role.isNotEmpty) await storage.setUserRole(role);
+    }
+  }
+
   // -----------------------------
   // Check if user is logged in (reads from storage)
   // -----------------------------
-  /// Restores the session from secure storage. A missing or expired token is
-  /// cleared and treated as logged out.
+  /// Restores the session from secure storage. An expired token is refreshed;
+  /// if the server rejects it the session is cleared. When the refresh can't
+  /// reach the server, the session is kept and refreshed on the next request.
   static Future<bool> checkLoginStatus() async {
     final storage = SecureStorageService.instance;
 
@@ -82,28 +107,38 @@ class HelperUtils {
     final hasSession = (storedId?.isNotEmpty ?? false) &&
         (storedToken?.isNotEmpty ?? false);
 
-    if (!hasSession || isTokenExpired(storedToken!)) {
-      if (hasSession) {
-        Log.w("Stored token expired — clearing session.");
-        await clearUser();
-      } else {
-        Log.w("Guest User! \nUserId: $storedId \nToken: $storedToken");
-      }
+    if (!hasSession) {
+      Log.w("Guest User! \nUserId: $storedId \nToken: $storedToken");
       isLogin = false;
       return false;
     }
 
     userId = storedId!;
-    token = storedToken;
+    token = storedToken!;
     userRole = await storage.getUserRole() ?? '';
     isLogin = true;
-    Log.i("✅ Session restored\nUserId: $userId\nRole: $userRole \nToken: $storedToken");
+    _persisted = true;
+
+    if (isTokenExpired(storedToken, leeway: tokenRefreshLeeway)) {
+      Log.w("Stored token expired — refreshing.");
+      final result = await TokenRefresher.refresh();
+      if (result == RefreshResult.rejected) {
+        await clearUser();
+        return false;
+      }
+    }
+
+    Log.i("✅ Session restored\nUserId: $userId\nRole: $userRole");
     return true;
   }
 
-  /// Reads the `exp` claim of a JWT. Tokens that can't be decoded or carry no
-  /// `exp` are treated as not expired and left for the server to reject.
-  static bool isTokenExpired(String jwt) {
+  /// Tokens this close to expiry are refreshed before use.
+  static const Duration tokenRefreshLeeway = Duration(seconds: 60);
+
+  /// Reads the `exp` claim of a JWT (optionally [leeway] early). Tokens that
+  /// can't be decoded or carry no `exp` are treated as not expired and left
+  /// for the server to reject.
+  static bool isTokenExpired(String jwt, {Duration leeway = Duration.zero}) {
     try {
       final parts = jwt.split('.');
       if (parts.length != 3) return false;
@@ -113,7 +148,7 @@ class HelperUtils {
       final exp = payload is Map ? payload['exp'] : null;
       if (exp is! num) return false;
       final expiry = DateTime.fromMillisecondsSinceEpoch(exp.toInt() * 1000);
-      return DateTime.now().isAfter(expiry);
+      return DateTime.now().add(leeway).isAfter(expiry);
     } catch (_) {
       return false;
     }
@@ -130,6 +165,7 @@ class HelperUtils {
     token = "";
     userRole = "";
     isLogin = false;
+    _persisted = false;
 
     Log.i("✅ User cleared. Logged out.");
   }

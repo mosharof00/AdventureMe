@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:adventureme/app/core/constants/enums.dart';
 import 'package:adventureme/app/core/extensions/sizedbox_extension.dart';
 import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
 import 'package:adventureme/app/global/widgets/app_svg_icon.dart';
 import 'package:adventureme/app/global/widgets/app_text.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
@@ -11,26 +13,18 @@ import 'package:adventureme/gen/assets.gen.dart';
 
 import '../controllers/itinerary_controller.dart';
 
+/// Card for every non-completed trip; the badge and primary action follow the
+/// trip's status.
 class PendingItineraryCard extends GetView<ItineraryController> {
-  const PendingItineraryCard({
-    super.key,
-    required this.item,
-    this.statusColor = const Color(0xFF8B6914),
-    this.statusBgColor = const Color(0xFFF5E6C8),
-    this.primaryLabel = 'Start Tracking',
-    this.onPrimaryTap,
-    this.onDetailsTap,
-  });
+  const PendingItineraryCard({super.key, required this.trip});
 
-  final PendingItinerary item;
-  final Color statusColor;
-  final Color statusBgColor;
-  final String primaryLabel;
-  final VoidCallback? onPrimaryTap;
-  final VoidCallback? onDetailsTap;
+  final TripListItem trip;
 
   @override
   Widget build(BuildContext context) {
+    final status = trip.status;
+    final primary = _primaryAction(status);
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w),
       padding: EdgeInsets.all(16.w),
@@ -52,23 +46,25 @@ class PendingItineraryCard extends GetView<ItineraryController> {
             children: [
               Expanded(
                 child: AppText(
-                  item.title,
+                  trip.title ?? 'Untitled Trip',
                   style: context.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF2D2D2D),
                   ),
+                  maxLines: 1,
                 ),
               ),
+              8.width,
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: statusBgColor,
+                  color: status.backgroundColor,
                   borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: AppText(
-                  item.status,
+                  status.label,
                   style: context.labelSmall.copyWith(
-                    color: statusColor,
+                    color: status.color,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -76,24 +72,29 @@ class PendingItineraryCard extends GetView<ItineraryController> {
             ],
           ),
           14.height,
-          _IconRow(icon: Assets.icons.locationIcon, text: item.route),
+          _IconRow(icon: Assets.icons.locationIcon, text: controller.route(trip)),
           10.height,
-          _IconRow(icon: Assets.icons.calendarIcon, text: item.dateRange),
+          _IconRow(
+            icon: Assets.icons.calendarIcon,
+            text: controller.dateRange(trip),
+          ),
           16.height,
           Row(
             children: [
-              Expanded(
-                child: GlobalButton(
-                  text: primaryLabel,
-                  onTap: onPrimaryTap ?? controller.onStartTracking,
-                  height: 35.h,
+              if (primary != null) ...[
+                Expanded(
+                  child: GlobalButton(
+                    text: primary.$1,
+                    onTap: primary.$2,
+                    height: 35.h,
+                  ),
                 ),
-              ),
-              12.width,
+                12.width,
+              ],
               Expanded(
                 child: GlobalButton(
                   text: 'View Details',
-                  onTap: onDetailsTap ?? () {},
+                  onTap: () => controller.onViewDetails(trip),
                   height: 35.h,
                   color: AppColor.primaryDisable,
                   textColor: const Color(0xFF2D2D2D),
@@ -105,6 +106,16 @@ class PendingItineraryCard extends GetView<ItineraryController> {
       ),
     );
   }
+
+  (String, VoidCallback)? _primaryAction(TripStatus status) => switch (status) {
+        TripStatus.active ||
+        TripStatus.paused =>
+          ('Track Live', () => controller.onTrackLive(trip)),
+        TripStatus.pending ||
+        TripStatus.draft =>
+          ('Start Tracking', () => controller.onStartTracking(trip)),
+        TripStatus.completed || TripStatus.cancelled => null,
+      };
 }
 
 class _IconRow extends StatelessWidget {
@@ -123,6 +134,7 @@ class _IconRow extends StatelessWidget {
           child: AppText(
             text,
             style: context.bodySmall.copyWith(color: AppColor.hintText),
+            maxLines: 1,
           ),
         ),
       ],
