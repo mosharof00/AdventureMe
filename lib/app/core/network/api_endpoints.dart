@@ -45,6 +45,13 @@ class ApiEndpoint {
 
   ///  Trips
   static const String trips = '$baseUrl/trips'; // post: create
+  static String tripDetails(String tripId) =>
+      '$trips/$tripId'; // get, patch: update, delete: cancel
+  static String startTrip(String tripId) => '$trips/$tripId/start'; // post
+  static String tripIntention(String tripId) =>
+      '$trips/$tripId/intention'; // post
+  static String tripThumbnail(String tripId) =>
+      '$trips/$tripId/thumbnail'; // post (multipart)
 
   /// user profile
   static const String profileDetails = '$baseUrl/profile/details'; // get

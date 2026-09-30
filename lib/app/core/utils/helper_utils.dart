@@ -33,6 +33,7 @@ class HelperUtils {
   static String firebaseToken = "";
   static bool isLogin = false;
   static String token = "";
+  static String refreshToken = "";
   static String userId = "";
   static String userRole = "";
 
@@ -49,6 +50,7 @@ class HelperUtils {
   static Future<void> setUser({
     required String userId,
     required String token,
+    String? refreshToken,
     String? role,
     bool persist = true,
   }) async {
@@ -57,6 +59,11 @@ class HelperUtils {
     if (persist) {
       await storage.setUserID(userId);
       await storage.setToken(token);
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await storage.setRefreshToken(refreshToken);
+      } else {
+        await storage.deleteRefreshToken();
+      }
       if (role != null) await storage.setUserRole(role);
     } else {
       await storage.clearAll();
@@ -64,6 +71,7 @@ class HelperUtils {
 
     HelperUtils.userId = userId;
     HelperUtils.token = token;
+    HelperUtils.refreshToken = refreshToken ?? '';
     HelperUtils.userRole = role ?? '';
     HelperUtils.isLogin = true;
     _persisted = persist;
@@ -73,20 +81,24 @@ class HelperUtils {
     );
   }
 
-  /// Swaps in a refreshed access token, saving it only if the session is
-  /// persisted.
+  /// Swaps in a refreshed access token (and a rotated refresh token, if the
+  /// server sent one), saving them only if the session is persisted.
   static Future<void> updateToken(
     String newToken, {
+    String? refreshToken,
     String? userId,
     String? role,
   }) async {
     token = newToken;
+    final rotated = refreshToken != null && refreshToken.isNotEmpty;
+    if (rotated) HelperUtils.refreshToken = refreshToken;
     if (userId != null && userId.isNotEmpty) HelperUtils.userId = userId;
     if (role != null && role.isNotEmpty) userRole = role;
 
     if (_persisted) {
       final storage = SecureStorageService.instance;
       await storage.setToken(newToken);
+      if (rotated) await storage.setRefreshToken(refreshToken);
       if (userId != null && userId.isNotEmpty) await storage.setUserID(userId);
       if (role != null && role.isNotEmpty) await storage.setUserRole(role);
     }
@@ -115,6 +127,7 @@ class HelperUtils {
 
     userId = storedId!;
     token = storedToken!;
+    refreshToken = await storage.getRefreshToken() ?? '';
     userRole = await storage.getUserRole() ?? '';
     isLogin = true;
     _persisted = true;
@@ -163,6 +176,7 @@ class HelperUtils {
 
     userId = "";
     token = "";
+    refreshToken = "";
     userRole = "";
     isLogin = false;
     _persisted = false;

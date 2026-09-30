@@ -119,7 +119,12 @@ class VerifyOtpController extends GetxController {
     if (token == null || token.isEmpty || userId == null || userId.isEmpty) {
       return false;
     }
-    await HelperUtils.setUser(userId: userId, token: token, role: data?.type);
+    await HelperUtils.setUser(
+      userId: userId,
+      token: token,
+      refreshToken: data?.refreshToken,
+      role: data?.type,
+    );
     Get.offAllNamed(Routes.MAIN_PAGE);
     return true;
   }

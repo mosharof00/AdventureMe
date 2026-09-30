@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import 'package:adventureme/app/core/network/api_client.dart';
 import 'package:adventureme/app/core/network/api_endpoints.dart';
@@ -23,6 +26,36 @@ abstract class ITripRepository {
     required bool travelTrackerEnabled,
     required bool isPublic,
     required bool canShare,
+  });
+
+  Future<TripResponse> updateTrip({
+    required String tripId,
+    required String title,
+    required String startingPlace,
+    required String destinedPlace,
+    required DateTime startingDate,
+    required DateTime endingDate,
+    required bool travelTrackerEnabled,
+    required bool isPublic,
+    required bool canShare,
+  });
+
+  Future<TripResponse> deleteTrip(String tripId);
+
+  Future<TripResponse> getTripDetails(String tripId);
+
+  Future<TripResponse> startTrip(String tripId);
+
+  Future<TripIntentionResponse> saveIntention({
+    required String tripId,
+    required IntentionType type,
+    required List<String> tags,
+    required String intention,
+  });
+
+  Future<TripThumbnailResponse> uploadThumbnail({
+    required String tripId,
+    required File file,
   });
 }
 
@@ -69,19 +102,144 @@ class TripRepository implements ITripRepository {
     return _client.handleRequest(
       () => _client.dio.post(
         ApiEndpoint.trips,
-        data: {
-          'title': title,
-          'starting_place': startingPlace,
-          'destined_place': destinedPlace,
-          'starting_date': _apiDate.format(startingDate),
-          'ending_date': _apiDate.format(endingDate),
-          'travel_tracker_enabled': travelTrackerEnabled,
-          'is_public': isPublic,
-          'can_share': canShare,
-        },
+        data: _tripBody(
+          title: title,
+          startingPlace: startingPlace,
+          destinedPlace: destinedPlace,
+          startingDate: startingDate,
+          endingDate: endingDate,
+          travelTrackerEnabled: travelTrackerEnabled,
+          isPublic: isPublic,
+          canShare: canShare,
+        ),
       ),
       (dynamic data) => TripResponse.fromJson(data),
       'Create Trip',
+    );
+  }
+
+  @override
+  Future<TripResponse> updateTrip({
+    required String tripId,
+    required String title,
+    required String startingPlace,
+    required String destinedPlace,
+    required DateTime startingDate,
+    required DateTime endingDate,
+    required bool travelTrackerEnabled,
+    required bool isPublic,
+    required bool canShare,
+  }) {
+    return _client.handleRequest(
+      () => _client.dio.patch(
+        ApiEndpoint.tripDetails(tripId),
+        data: _tripBody(
+          title: title,
+          startingPlace: startingPlace,
+          destinedPlace: destinedPlace,
+          startingDate: startingDate,
+          endingDate: endingDate,
+          travelTrackerEnabled: travelTrackerEnabled,
+          isPublic: isPublic,
+          canShare: canShare,
+        ),
+      ),
+      (dynamic data) => TripResponse.fromJson(data),
+      'Update Trip',
+    );
+  }
+
+  @override
+  Future<TripResponse> deleteTrip(String tripId) {
+    return _client.handleRequest(
+      () => _client.dio.delete(ApiEndpoint.tripDetails(tripId)),
+      (dynamic data) => TripResponse.fromJson(data),
+      'Delete Trip',
+    );
+  }
+
+  Map<String, dynamic> _tripBody({
+    required String title,
+    required String startingPlace,
+    required String destinedPlace,
+    required DateTime startingDate,
+    required DateTime endingDate,
+    required bool travelTrackerEnabled,
+    required bool isPublic,
+    required bool canShare,
+  }) => {
+    'title': title,
+    'starting_place': startingPlace,
+    'destined_place': destinedPlace,
+    'starting_date': _apiDate.format(startingDate),
+    'ending_date': _apiDate.format(endingDate),
+    'travel_tracker_enabled': travelTrackerEnabled,
+    'is_public': isPublic,
+    'can_share': canShare,
+  };
+
+  @override
+  Future<TripResponse> getTripDetails(String tripId) {
+    return _client.handleRequest(
+      () => _client.dio.get(ApiEndpoint.tripDetails(tripId)),
+      (dynamic data) => TripResponse.fromJson(data),
+      'Get Trip Details',
+    );
+  }
+
+  @override
+  Future<TripResponse> startTrip(String tripId) {
+    return _client.handleRequest(
+      () => _client.dio.post(ApiEndpoint.startTrip(tripId)),
+      (dynamic data) => TripResponse.fromJson(data),
+      'Start Trip',
+    );
+  }
+
+  @override
+  Future<TripIntentionResponse> saveIntention({
+    required String tripId,
+    required IntentionType type,
+    required List<String> tags,
+    required String intention,
+  }) {
+    return _client.handleRequest(
+      () => _client.dio.post(
+        ApiEndpoint.tripIntention(tripId),
+        data: {
+          'intention_type': type.apiValue,
+          'intention_tags': tags,
+          'intention': intention,
+        },
+      ),
+      (dynamic data) => TripIntentionResponse.fromJson(data),
+      'Save Trip Intention',
+    );
+  }
+
+  @override
+  Future<TripThumbnailResponse> uploadThumbnail({
+    required String tripId,
+    required File file,
+  }) async {
+    final fileName = file.path.split(Platform.pathSeparator).last;
+    var ext = fileName.contains('.')
+        ? fileName.split('.').last.toLowerCase()
+        : 'jpeg';
+    if (ext == 'jpg') ext = 'jpeg';
+
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(
+        file.path,
+        filename: fileName,
+        contentType: DioMediaType('image', ext),
+      ),
+    });
+
+    return _client.handleRequest(
+      () => _client.dio.post(ApiEndpoint.tripThumbnail(tripId), data: formData),
+      (dynamic data) => TripThumbnailResponse.fromJson(data),
+      'Upload Trip Thumbnail',
     );
   }
 }

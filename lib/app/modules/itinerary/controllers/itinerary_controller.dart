@@ -1,12 +1,18 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:adventureme/app/core/constants/enums.dart';
 import 'package:adventureme/app/core/network/handle_exceptions.dart';
+import 'package:adventureme/app/core/theme/app_color.dart';
+import 'package:adventureme/app/core/utils/image_picker_helper.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
 import 'package:adventureme/app/data/repositories/trip_repository.dart';
+import 'package:adventureme/app/global/widgets/global_snackbar.dart';
+import 'package:adventureme/app/modules/itinerary/widgets/trip_thumbnail_dialog.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
 
 /// List + cursor-pagination state of one tab.
@@ -185,9 +191,10 @@ class ItineraryController extends GetxController
   static final _dayMonthYear = DateFormat('MMM d, yyyy');
 
   /// e.g. "Mar 10 to Mar 17, 2026" (API dates are day-only, kept in UTC).
-  String dateRange(TripListItem trip) {
-    final start = trip.startingDate;
-    final end = trip.endingDate;
+  String dateRange(TripListItem trip) =>
+      formatDateRange(trip.startingDate, trip.endingDate);
+
+  static String formatDateRange(DateTime? start, DateTime? end) {
     if (start == null && end == null) return '--';
     if (start == null) return _dayMonthYear.format(end!);
     if (end == null) return _dayMonthYear.format(start);
@@ -198,7 +205,10 @@ class ItineraryController extends GetxController
   }
 
   String route(TripListItem trip) =>
-      'Starting: ${trip.startingPlace ?? '--'} | Destined: ${trip.destinedPlace ?? '--'}';
+      formatRoute(trip.startingPlace, trip.destinedPlace);
+
+  static String formatRoute(String? starting, String? destined) =>
+      'Starting: ${starting ?? '--'} | Destined: ${destined ?? '--'}';
 
   // ── Actions ──────────────────────────────────────────
   void onStartTracking(TripListItem trip) {}
@@ -208,6 +218,77 @@ class ItineraryController extends GetxController
   void onShare(TripListItem trip) {}
   void onScan(TripListItem trip) {}
   void onNotifications() => Get.toNamed(Routes.NOTIFICATIONS);
+
+  // ── Thumbnail ────────────────────────────────────────
+  final pickedThumbnail = Rxn<File>();
+  final isUploadingThumbnail = false.obs;
+
+  void onEditThumbnail(TripListItem trip) {
+    if (trip.id == null) return;
+    pickedThumbnail.value = null;
+    TripThumbnailDialog.show(trip);
+  }
+
+  Future<void> pickThumbnail(ImageSource source) async {
+    final file = await ImagePickerHelper.pickSingleFile(
+      imageSource: source,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 85,
+    );
+    if (file != null) pickedThumbnail.value = File(file.path);
+  }
+
+  void closeThumbnailDialog() {
+    if (isUploadingThumbnail.value) return;
+    pickedThumbnail.value = null;
+    Get.back();
+  }
+
+  Future<void> saveThumbnail(TripListItem trip) async {
+    final file = pickedThumbnail.value;
+    final tripId = trip.id;
+    if (file == null || tripId == null || isUploadingThumbnail.value) return;
+
+    try {
+      isUploadingThumbnail.value = true;
+      final response = await _tripRepository.uploadThumbnail(
+        tripId: tripId,
+        file: file,
+      );
+      final url = response.thumbnailUrl;
+      if (response.success != true || url == null || url.isEmpty) {
+        globalSnackBar(
+          title: 'Update Failed',
+          message: response.message ?? 'Unable to update the thumbnail.',
+        );
+        return;
+      }
+
+      _applyCover(tripId, url);
+      isUploadingThumbnail.value = false;
+      closeThumbnailDialog();
+      globalSnackBar(
+        title: 'Thumbnail Updated',
+        message: response.message ?? 'Trip thumbnail updated.',
+        backgroundColor: AppColor.primary,
+      );
+    } catch (e) {
+      handleException(e, context: 'Itinerary - Upload Thumbnail');
+    } finally {
+      isUploadingThumbnail.value = false;
+    }
+  }
+
+  /// The same trip can appear in several tabs.
+  void _applyCover(String tripId, String url) {
+    for (final state in tabs.values) {
+      final index = state.items.indexWhere((e) => e.id == tripId);
+      if (index != -1) {
+        state.items[index] = state.items[index].copyWith(coverUrl: url);
+      }
+    }
+  }
 
   @override
   void onClose() {

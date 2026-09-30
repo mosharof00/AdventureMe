@@ -18,6 +18,7 @@ class VerifyOtpData {
   final String? userId;
   final String? type;
   final String? accessToken;
+  final String? refreshToken;
   final String? resetToken;
   final DateTime? expiresAt;
   final int? expiresInSeconds;
@@ -26,6 +27,7 @@ class VerifyOtpData {
     this.userId,
     this.type,
     this.accessToken,
+    this.refreshToken,
     this.resetToken,
     this.expiresAt,
     this.expiresInSeconds,
@@ -35,6 +37,7 @@ class VerifyOtpData {
         userId: json['userId'],
         type: json['type'],
         accessToken: json['accessToken'],
+        refreshToken: json['refreshToken'],
         resetToken: json['resetToken'],
         expiresAt: DateTime.tryParse(json['expiresAt']?.toString() ?? ''),
         expiresInSeconds: (json['expiresInSeconds'] as num?)?.toInt(),

@@ -17,40 +17,48 @@ class TimelineTab extends GetView<ItineraryDetailsController> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.only(top: 16.h, bottom: 24.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const TripInfoCard(),
-          28.height,
-          const TripTimerSection(),
-          28.height,
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: AppText(
-              'Tracking Details',
-              style: context.titleMedium.copyWith(
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF2D2D2D),
+    return RefreshIndicator(
+      onRefresh: controller.fetchDetails,
+      child: Obx(
+        () => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.only(top: 16.h, bottom: 24.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const TripInfoCard(),
+              28.height,
+              if (!controller.isCancelled) ...[
+                const TripTimerSection(),
+                28.height,
+              ],
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: AppText(
+                  'Tracking Details',
+                  style: context.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF2D2D2D),
+                  ),
+                ),
               ),
-            ),
+              16.height,
+              for (var i = 0; i < controller.days.length; i++) ...[
+                TrackingDayCard(
+                  day: controller.days[i],
+                  isDone: controller.isDayDone(i),
+                  onManagePhotos: () => controller.onManageDayPhotos(
+                    i + 1,
+                    controller.days[i].date,
+                  ),
+                ),
+                if (i != controller.days.length - 1) 16.height,
+              ],
+              32.height,
+              const _ActionButtons(),
+            ],
           ),
-          16.height,
-          for (var i = 0; i < controller.days.length; i++) ...[
-            TrackingDayCard(
-              day: controller.days[i],
-              isDone: controller.isDayDone(i),
-              onManagePhotos: () => controller.onManageDayPhotos(
-                i + 1,
-                controller.days[i].date,
-              ),
-            ),
-            if (i != controller.days.length - 1) 16.height,
-          ],
-          32.height,
-          const _ActionButtons(),
-        ],
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:adventureme/app/core/constants/enums.dart';
 import 'package:adventureme/app/core/extensions/sizedbox_extension.dart';
 import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
@@ -18,88 +19,86 @@ class TripInfoCard extends GetView<ItineraryDetailsController> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBEFE0),
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: AppText(
-                  controller.tripTitle,
-                  style: context.titleLarge.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF2D2D2D),
-                  ),
-                ),
-              ),
-              _StatusBadge(status: controller.status),
-            ],
-          ),
-          14.height,
-          _InfoRow(icon: Assets.icons.locationIcon, text: controller.tripRoute),
-          10.height,
-          _InfoRow(icon: Assets.icons.calendarIcon, text: controller.tripDates),
-          if (showActions) ...[
-            16.height,
+    return Obx(
+      () => Container(
+        margin: EdgeInsets.symmetric(horizontal: 16.w),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFBEFE0),
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               children: [
                 Expanded(
-                  child: GlobalButton(
-                    text: 'Cancel Trip',
-                    color: AppColor.primaryDisable,
-                    textColor: AppColor.primary,
-                    height: 42.h,
-                    onTap: controller.onCancelTrip,
+                  child: AppText(
+                    controller.tripTitle,
+                    style: context.titleLarge.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF2D2D2D),
+                    ),
                   ),
                 ),
-                12.width,
-                Expanded(
-                  child: GlobalButton(
-                    text: 'Edit Trip',
-                    height: 42.h,
-                    onTap: controller.onEditTrip,
-                  ),
+                _StatusBadge(
+                  status: controller.status.value,
+                  label: controller.statusLabel,
                 ),
               ],
             ),
+            14.height,
+            _InfoRow(
+              icon: Assets.icons.locationIcon,
+              text: controller.tripRoute,
+            ),
+            10.height,
+            _InfoRow(
+              icon: Assets.icons.calendarIcon,
+              text: controller.tripDates,
+            ),
+            if (showActions && !controller.isCancelled) ...[
+              16.height,
+              Row(
+                children: [
+                  Expanded(
+                    child: GlobalButton(
+                      text: 'Cancel Trip',
+                      color: AppColor.primaryDisable,
+                      textColor: AppColor.primary,
+                      height: 42.h,
+                      onTap: controller.onCancelTrip,
+                    ),
+                  ),
+                  12.width,
+                  Expanded(
+                    child: GlobalButton(
+                      text: 'Edit Trip',
+                      height: 42.h,
+                      onTap: controller.onEditTrip,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status});
+  const _StatusBadge({required this.status, required this.label});
 
-  final TripDetailsStatus status;
+  final TripStatus status;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    final (Color bg, Color fg, String label) = switch (status) {
-      TripDetailsStatus.pending => (
-        const Color(0xFFF5E6C8),
-        const Color(0xFF8B6914),
-        'Pending',
-      ),
-      TripDetailsStatus.ongoing => (
-        const Color(0xFFDDF3E5),
-        const Color(0xFF1E8E5A),
-        'Ongoing',
-      ),
-      TripDetailsStatus.completed => (
-        const Color(0xFFD5EEF0),
-        AppColor.primary,
-        'Completed',
-      ),
-    };
+    final (Color bg, Color fg) = status == TripStatus.completed
+        ? (const Color(0xFFD5EEF0), AppColor.primary)
+        : (status.backgroundColor, status.color);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),

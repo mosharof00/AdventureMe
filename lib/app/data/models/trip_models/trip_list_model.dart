@@ -75,6 +75,20 @@ class TripListItem {
 
   bool get hasCover => coverUrl != null && coverUrl!.isNotEmpty;
 
+  TripListItem copyWith({String? coverUrl}) => TripListItem(
+        id: id,
+        title: title,
+        startingPlace: startingPlace,
+        destinedPlace: destinedPlace,
+        startingDate: startingDate,
+        endingDate: endingDate,
+        status: status,
+        isPublic: isPublic,
+        trackingDurationMinutes: trackingDurationMinutes,
+        trackingDisplay: trackingDisplay,
+        coverUrl: coverUrl ?? this.coverUrl,
+      );
+
   factory TripListItem.fromJson(Map<String, dynamic> json) => TripListItem(
         id: json['id']?.toString(),
         title: json['title'],

@@ -56,6 +56,7 @@ class LoginController extends GetxController {
       await HelperUtils.setUser(
         userId: userId,
         token: token,
+        refreshToken: data?.refreshToken,
         role: data?.type,
         persist: rememberMe.value,
       );

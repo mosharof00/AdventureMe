@@ -15,8 +15,9 @@ enum RefreshResult {
   failed,
 }
 
-/// Exchanges the current access token (even an expired one) for a new one via
-/// `POST /auth/refresh`. Concurrent callers share one in-flight request.
+/// Gets a new access token from `POST /auth/refresh`, sending the refresh
+/// token as the Bearer. Sessions saved before refresh tokens existed fall back
+/// to the current access token. Concurrent callers share one in-flight request.
 class TokenRefresher {
   TokenRefresher._();
 
@@ -37,13 +38,18 @@ class TokenRefresher {
   }
 
   static Future<RefreshResult> _refresh() async {
-    final current = HelperUtils.token;
-    if (current.isEmpty) return RefreshResult.rejected;
+    final refreshToken = HelperUtils.refreshToken;
+    final bearer = refreshToken.isNotEmpty ? refreshToken : HelperUtils.token;
+    if (bearer.isEmpty) return RefreshResult.rejected;
+    if (refreshToken.isNotEmpty && HelperUtils.isTokenExpired(refreshToken)) {
+      Log.w('[Refresh Token] Refresh token expired');
+      return RefreshResult.rejected;
+    }
 
     try {
       final response = await _dio.post(
         ApiEndpoint.refresh,
-        options: Options(headers: {'Authorization': 'Bearer $current'}),
+        options: Options(headers: {'Authorization': 'Bearer $bearer'}),
       );
 
       final body = response.data;
@@ -56,6 +62,7 @@ class TokenRefresher {
 
       await HelperUtils.updateToken(
         newToken,
+        refreshToken: data['refreshToken']?.toString(),
         userId: data['userId']?.toString(),
         role: data['type']?.toString(),
       );

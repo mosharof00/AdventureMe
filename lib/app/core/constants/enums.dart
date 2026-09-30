@@ -42,6 +42,32 @@ enum TripStatus {
       };
 }
 
+/// Why the user is taking a trip (`intention_type`).
+enum IntentionType {
+  firstTime('FIRST_TIME', 'First Time'),
+  celebration('CELEBRATION', 'Celebration'),
+  timeTogether('TIME_TOGETHER', 'Time Together'),
+  dreamDestination('DREAM_DESTINATION', 'Dream Destination'),
+  returningMeaningful('RETURNING_MEANINGFUL', 'Returning Somewhere Meaningful'),
+  newChapter('NEW_CHAPTER', 'New Chapter'),
+  personalChallenge('PERSONAL_CHALLENGE', 'Personal Challenge'),
+  rememberingSomeone('REMEMBERING_SOMEONE', 'Remembering Someone'),
+  visitingSomeone('VISITING_SOMEONE', 'Visiting Someone'),
+  somethingElse('SOMETHING_ELSE', 'Something Else');
+
+  const IntentionType(this.apiValue, this.label);
+
+  final String apiValue;
+  final String label;
+
+  static IntentionType? fromApi(String? value) {
+    for (final type in values) {
+      if (type.apiValue == value?.toUpperCase()) return type;
+    }
+    return null;
+  }
+}
+
 /// Tabs on the Itinerary screen; [status] is the API filter (null = all).
 enum ItineraryTab {
   all('All', null),

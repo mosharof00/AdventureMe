@@ -4,9 +4,15 @@ import 'package:adventureme/app/core/utils/logger.dart';
 class ImagePickerHelper {
   static Future<XFile?> pickSingleFile({
     required ImageSource imageSource,
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
   }) async {
     final XFile? pickedImage = await ImagePicker().pickImage(
       source: imageSource,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+      imageQuality: imageQuality,
     );
     if (pickedImage != null) {
       Log.i(pickedImage);

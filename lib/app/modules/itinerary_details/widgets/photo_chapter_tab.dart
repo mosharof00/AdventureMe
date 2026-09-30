@@ -16,8 +16,10 @@ class PhotoChapterTab extends GetView<ItineraryDetailsController> {
 
   @override
   Widget build(BuildContext context) {
-    final memoryDays = controller.memoryDays;
+    return Obx(() => _content(context, controller.memoryDays));
+  }
 
+  Widget _content(BuildContext context, List<TrackingDay> memoryDays) {
     return SingleChildScrollView(
       padding: EdgeInsets.only(top: 16.h, bottom: 24.h),
       child: Column(

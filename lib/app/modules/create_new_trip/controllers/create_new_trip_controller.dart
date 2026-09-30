@@ -11,9 +11,14 @@ import 'package:adventureme/app/global/widgets/global_snackbar.dart';
 import 'package:adventureme/gen/assets.gen.dart';
 
 /// Pops with the created [TripData] as the route result so the opener can
-/// refresh its list.
+/// refresh its list. Opened with a [TripData] argument it edits that trip
+/// instead and pops with the update's [TripResponse]; the opener shows the
+/// success message after its own navigation.
 class CreateNewTripController extends GetxController {
   final ITripRepository _tripRepository = Get.find<ITripRepository>();
+
+  TripData? editingTrip;
+  bool get isEditing => editingTrip != null;
 
   static const int totalSteps = 3;
 
@@ -50,6 +55,37 @@ class CreateNewTripController extends GetxController {
   bool get isLastStep => currentStep.value == totalSteps - 1;
 
   final _dateFormat = DateFormat('MM/dd/yyyy');
+
+  @override
+  void onInit() {
+    super.onInit();
+    final arg = Get.arguments;
+    if (arg is TripData) _prefill(arg);
+  }
+
+  void _prefill(TripData trip) {
+    editingTrip = trip;
+    titleController.text = trip.title ?? '';
+    startingPlaceController.text = trip.startingPlace ?? '';
+    destinedPlaceController.text = trip.destinedPlace ?? '';
+    final start = _dateOnly(trip.startingDate);
+    final end = _dateOnly(trip.endingDate);
+    if (start != null) {
+      startDate.value = start;
+      startDateController.text = _dateFormat.format(start);
+    }
+    if (end != null) {
+      endDate.value = end;
+      endDateController.text = _dateFormat.format(end);
+    }
+    travelTracker.value = trip.travelTrackerEnabled;
+    anyoneCanSee.value = trip.isPublic;
+    anyoneCanShare.value = trip.canShare;
+  }
+
+  /// API dates are day-only values sent as UTC midnight.
+  DateTime? _dateOnly(DateTime? date) =>
+      date == null ? null : DateTime(date.year, date.month, date.day);
 
   // ── Validators ───────────────────────────────────────
   String? validateTitle(String? value) =>
@@ -106,10 +142,17 @@ class CreateNewTripController extends GetxController {
     DateTime? firstDate,
   }) {
     final now = DateTime.now();
+    var first = firstDate ?? DateTime(now.year - 1);
+    final original = editingTrip == null
+        ? null
+        : _dateOnly(editingTrip!.startingDate);
+    if (firstDate == null && original != null && original.isBefore(first)) {
+      first = original;
+    }
     return showDatePicker(
       context: context,
       initialDate: initial ?? firstDate ?? now,
-      firstDate: firstDate ?? DateTime(now.year - 1),
+      firstDate: first,
       lastDate: DateTime(now.year + 5),
     );
   }
@@ -137,7 +180,7 @@ class CreateNewTripController extends GetxController {
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (isLastStep) {
-      _createTrip();
+      isEditing ? _updateTrip() : _createTrip();
     } else {
       currentStep.value++;
     }
@@ -160,7 +203,8 @@ class CreateNewTripController extends GetxController {
       if (response.success != true || response.data == null) {
         globalSnackBar(
           title: 'Trip Not Created',
-          message: response.message ?? 'Unable to create trip. Please try again.',
+          message:
+              response.message ?? 'Unable to create trip. Please try again.',
         );
         return;
       }
@@ -174,13 +218,49 @@ class CreateNewTripController extends GetxController {
     }
   }
 
+  Future<void> _updateTrip() async {
+    final tripId = editingTrip?.id;
+    if (tripId == null) return;
+    try {
+      isSubmitting.value = true;
+      final response = await _tripRepository.updateTrip(
+        tripId: tripId,
+        title: titleController.text.trim(),
+        startingPlace: startingPlaceController.text.trim(),
+        destinedPlace: destinedPlaceController.text.trim(),
+        startingDate: startDate.value!,
+        endingDate: endDate.value!,
+        travelTrackerEnabled: travelTracker.value,
+        isPublic: anyoneCanSee.value,
+        canShare: anyoneCanShare.value,
+      );
+
+      if (response.success != true || response.data == null) {
+        globalSnackBar(
+          title: 'Trip Not Updated',
+          message:
+              response.message ?? 'Unable to update trip. Please try again.',
+        );
+        return;
+      }
+
+      if (Get.isSnackbarOpen) Get.closeAllSnackbars();
+      Get.back(result: response);
+    } catch (e) {
+      handleException(e, context: 'Update Trip');
+    } finally {
+      isSubmitting.value = false;
+    }
+  }
+
   /// The trip already exists, so closing the sheet in any way (button or
   /// system back) leaves the flow; staying could create a duplicate.
   Future<void> _showSuccessSheet(String? message) async {
     await AppBottomSheet.show(
       sticker: Assets.images.decisionSticker.path,
       title: "Done! It's Ready now!",
-      description: message ??
+      description:
+          message ??
           'Your trip plan is ready. You can start tracking whenever you want!',
       isDismissible: false,
       enableDrag: false,

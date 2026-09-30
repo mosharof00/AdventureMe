@@ -22,7 +22,7 @@ class CreateNewTripView extends GetView<CreateNewTripController> {
   Widget build(BuildContext context) {
     return AppScaffold(
       appBar: CustomAppBar(
-        title: 'Planning New Trip',
+        title: controller.isEditing ? 'Edit Trip' : 'Planning New Trip',
         showBackButton: true,
         onBackTap: controller.onBack,
         backgroundColor: Colors.transparent,
@@ -92,7 +92,9 @@ class CreateNewTripView extends GetView<CreateNewTripController> {
       padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 20.h),
       child: Obx(
         () => GlobalButton(
-          text: 'Continue',
+          text: controller.isEditing && controller.isLastStep
+              ? 'Save Changes'
+              : 'Continue',
           color: AppColor.primary,
           onTap: controller.onContinue,
           widget: controller.isSubmitting.value

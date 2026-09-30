@@ -19,21 +19,24 @@ class LoginModel {
 }
 
 class LoginData {
-  LoginData({this.userId, this.type, this.accessToken});
+  LoginData({this.userId, this.type, this.accessToken, this.refreshToken});
 
   final String? userId;
   final String? type;
   final String? accessToken;
+  final String? refreshToken;
 
   factory LoginData.fromJson(Map<String, dynamic> json) => LoginData(
     userId: json['userId'],
     type: json['type'],
     accessToken: json['accessToken'],
+    refreshToken: json['refreshToken'],
   );
 
   Map<String, dynamic> toJson() => {
     'userId': userId,
     'type': type,
     'accessToken': accessToken,
+    'refreshToken': refreshToken,
   };
 }

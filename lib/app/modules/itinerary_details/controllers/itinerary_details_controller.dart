@@ -1,16 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:adventureme/app/core/constants/enums.dart';
+import 'package:adventureme/app/core/network/handle_exceptions.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
-import 'package:adventureme/app/modules/itinerary/controllers/itinerary_controller.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
+import 'package:adventureme/app/data/repositories/trip_repository.dart';
 import 'package:adventureme/app/global/widgets/app_bottom_sheet.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
+import 'package:adventureme/app/global/widgets/global_loading.dart';
+import 'package:adventureme/app/global/widgets/global_snackbar.dart';
+import 'package:adventureme/app/modules/itinerary/controllers/itinerary_controller.dart';
 import 'package:adventureme/app/modules/itinerary_details/widgets/story_generating_dialog.dart';
+import 'package:adventureme/app/modules/itinerary_details/widgets/trip_intention_dialog.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
-
-enum TripDetailsStatus { pending, ongoing, completed }
+import 'package:adventureme/gen/assets.gen.dart';
 
 class TripCheckpoint {
   const TripCheckpoint({
@@ -42,162 +50,111 @@ class TrackingDay {
   final List<TripCheckpoint> checkpoints;
 }
 
+/// Opened with a [TripListItem] (or a trip id) as the route argument.
 class ItineraryDetailsController extends GetxController {
-  late final TripDetailsStatus status;
+  final ITripRepository _tripRepository = Get.find<ITripRepository>();
 
-  /// Trip opened from the Itinerary list (details API not integrated yet).
-  TripListItem? trip;
+  String? tripId;
 
-  // ── Trip info ────────────────────────────────────────
-  String tripTitle = 'Florida Adventure';
-  String tripRoute = 'Starting: Florida | Destined: Brazil';
-  String tripDates = 'Mar 10 to Mar 13, 2026';
+  final trip = Rxn<TripData>();
+  final isLoading = false.obs;
+  final hasError = false.obs;
+  final isStarting = false.obs;
+  final isCancelling = false.obs;
+
+  /// Shown while the details request is in flight.
+  TripListItem? _preview;
+
+  final status = TripStatus.pending.obs;
+  final days = <TrackingDay>[].obs;
+  final elapsed = Duration.zero.obs;
+  Timer? _ticker;
+
+  static final _dayDate = DateFormat('MMM d, yyyy');
 
   @override
   void onInit() {
     super.onInit();
     final arg = Get.arguments;
     if (arg is TripListItem) {
-      trip = arg;
-      status = switch (arg.status) {
-        TripStatus.completed => TripDetailsStatus.completed,
-        TripStatus.active || TripStatus.paused => TripDetailsStatus.ongoing,
-        _ => TripDetailsStatus.pending,
-      };
-      if (Get.isRegistered<ItineraryController>()) {
-        final itinerary = Get.find<ItineraryController>();
-        tripTitle = arg.title ?? tripTitle;
-        tripRoute = itinerary.route(arg);
-        tripDates = itinerary.dateRange(arg);
+      _preview = arg;
+      tripId = arg.id;
+      status.value = arg.status;
+    } else if (arg is String) {
+      tripId = arg;
+    }
+    fetchDetails();
+  }
+
+  // ── Loading ──────────────────────────────────────────
+  Future<void> fetchDetails() async {
+    final id = tripId;
+    if (id == null || isLoading.value) return;
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      final response = await _tripRepository.getTripDetails(id);
+      final data = response.data;
+      if (response.success == true && data != null) {
+        _applyTrip(data);
+      } else {
+        hasError.value = trip.value == null;
+        globalSnackBar(
+          title: 'Trip Details',
+          message: response.message ?? 'Unable to load trip details.',
+        );
       }
-    } else {
-      status = arg is TripDetailsStatus ? arg : TripDetailsStatus.pending;
+    } catch (e) {
+      hasError.value = trip.value == null;
+      handleException(e, context: 'Itinerary Details');
+    } finally {
+      isLoading.value = false;
     }
   }
 
+  void _applyTrip(TripData data) {
+    trip.value = data;
+    status.value = data.tripStatus;
+    days.assignAll([
+      for (final interval in data.tripIntervals)
+        TrackingDay(
+          dayLabel: 'Day ${interval.dayNumber ?? '-'}',
+          date: interval.date == null ? '--' : _dayDate.format(interval.date!),
+          checkpoints: const [],
+        ),
+    ]);
+    _syncTimer();
+  }
+
+  // ── Trip info ────────────────────────────────────────
+  String get tripTitle =>
+      trip.value?.title ?? _preview?.title ?? 'Untitled Trip';
+
+  String get tripRoute => ItineraryController.formatRoute(
+    trip.value?.startingPlace ?? _preview?.startingPlace,
+    trip.value?.destinedPlace ?? _preview?.destinedPlace,
+  );
+
+  String get tripDates => ItineraryController.formatDateRange(
+    trip.value?.startingDate ?? _preview?.startingDate,
+    trip.value?.endingDate ?? _preview?.endingDate,
+  );
+
   // ── Status helpers ───────────────────────────────────
-  String get statusLabel => switch (status) {
-    TripDetailsStatus.pending => 'Pending',
-    TripDetailsStatus.ongoing => 'Ongoing',
-    TripDetailsStatus.completed => 'Completed',
-  };
+  String get statusLabel =>
+      status.value == TripStatus.active ? 'Ongoing' : status.value.label;
 
-  bool get isPending => status == TripDetailsStatus.pending;
-  bool get isOngoing => status == TripDetailsStatus.ongoing;
-  bool get isCompleted => status == TripDetailsStatus.completed;
+  bool get isPending =>
+      status.value == TripStatus.pending || status.value == TripStatus.draft;
+  bool get isOngoing =>
+      status.value == TripStatus.active || status.value == TripStatus.paused;
+  bool get isCompleted => status.value == TripStatus.completed;
+  bool get isCancelled => status.value == TripStatus.cancelled;
 
-  /// Elapsed / total time shown on the timer.
-  String get timerText => switch (status) {
-    TripDetailsStatus.pending => '00:00:00',
-    TripDetailsStatus.ongoing => '32:12:54',
-    TripDetailsStatus.completed => '72:12:54',
-  };
-
-  bool isDayDone(int index) => switch (status) {
-    TripDetailsStatus.pending => false,
-    TripDetailsStatus.ongoing => index < days.length - 1,
-    TripDetailsStatus.completed => true,
-  };
+  bool isDayDone(int index) => days[index].checkpoints.isNotEmpty;
 
   /// Label of the photo button on a completed day card.
   String get photoActionLabel => isCompleted ? 'Edit Photos' : 'Upload Photos';
-
-  // ── Tracking data ────────────────────────────────────
-  final days = const <TrackingDay>[
-    TrackingDay(
-      dayLabel: 'Day 1',
-      date: 'May 7, 2026',
-      checkpoints: [
-        TripCheckpoint(
-          title: 'Landed in Naples',
-          time: '10:30 AM',
-          duration: '30 min',
-          label: 'Checkpoint 1',
-          quote:
-              'Ceremonial umbrellas through the village as part of a communal journey to purify both the human soul and the universe.',
-          photos: [
-            'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=600',
-            'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400',
-            'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400',
-          ],
-        ),
-        TripCheckpoint(
-          title: 'Ferry to Positano',
-          time: '10:30 AM',
-          duration: '30 min',
-          label: 'Checkpoint 2',
-          quote:
-              'Ceremonial umbrellas through the village as part of a communal journey to purify both the human soul and the universe.',
-          photos: [
-            'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=600',
-            'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400',
-            'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400',
-          ],
-        ),
-        TripCheckpoint(
-          title: 'Sunset Walk',
-          time: '10:30 AM',
-          duration: '30 min',
-          label: 'Checkpoint 3',
-          quote:
-              'Ceremonial umbrellas through the village as part of a communal journey to purify both the human soul and the universe.',
-          photos: [
-            'https://images.unsplash.com/photo-1503803548695-c2a7b4a5b875?w=600',
-            'https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=400',
-            'https://images.unsplash.com/photo-1520466809213-7b9a56adcd45?w=400',
-          ],
-        ),
-      ],
-    ),
-    TrackingDay(
-      dayLabel: 'Day 2',
-      date: 'May 8, 2026',
-      checkpoints: [
-        TripCheckpoint(
-          title: 'Paths of the Gods Hike',
-          time: '10:30 AM',
-          duration: '30 min',
-          label: 'Checkpoint 1',
-          quote:
-              'Ceremonial umbrellas through the village as part of a communal journey to purify both the human soul and the universe.',
-          photos: [
-            'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600',
-            'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=400',
-          ],
-        ),
-        TripCheckpoint(
-          title: 'Lunch in Nocelle',
-          time: '10:30 AM',
-          duration: '30 min',
-          label: 'Checkpoint 2',
-          quote:
-              'Ceremonial umbrellas through the village as part of a communal journey to purify both the human soul and the universe.',
-          photos: [
-            'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600',
-            'https://images.unsplash.com/photo-1533777324565-a040eb52facd?w=400',
-          ],
-        ),
-      ],
-    ),
-    TrackingDay(
-      dayLabel: 'Day 3',
-      date: 'May 9, 2026',
-      checkpoints: [
-        TripCheckpoint(
-          title: 'Old Town Stroll',
-          time: '10:30 AM',
-          duration: '30 min',
-          label: 'Checkpoint 1',
-          quote:
-              'Ceremonial umbrellas through the village as part of a communal journey to purify both the human soul and the universe.',
-          photos: [
-            'https://images.unsplash.com/photo-1499678329028-101435549a4e?w=600',
-            'https://images.unsplash.com/photo-1513581166391-887a96ddeafd?w=400',
-          ],
-        ),
-      ],
-    ),
-  ];
 
   /// Days that already have tracked data (for the Photo Chapter tab).
   List<TrackingDay> get memoryDays => [
@@ -205,12 +162,211 @@ class ItineraryDetailsController extends GetxController {
       if (isDayDone(i)) days[i],
   ];
 
+  // ── Timer ────────────────────────────────────────────
+  String get timerText {
+    final total = elapsed.value.inSeconds;
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(total ~/ 3600)}:${two(total % 3600 ~/ 60)}:${two(total % 60)}';
+  }
+
+  Duration _computeElapsed() {
+    final data = trip.value;
+    final started = data?.startedAt;
+    if (data == null) return Duration.zero;
+    if (isCompleted && data.trackingDurationMinutes != null) {
+      return Duration(minutes: data.trackingDurationMinutes!);
+    }
+    if (started == null) return Duration.zero;
+    final until = switch (status.value) {
+      TripStatus.active => DateTime.now(),
+      TripStatus.paused => data.pausedAt ?? DateTime.now(),
+      _ => data.endedAt ?? started,
+    };
+    final diff = until.difference(started);
+    return diff.isNegative ? Duration.zero : diff;
+  }
+
+  void _syncTimer() {
+    _ticker?.cancel();
+    elapsed.value = _computeElapsed();
+    if (status.value == TripStatus.active) {
+      _ticker = Timer.periodic(
+        const Duration(seconds: 1),
+        (_) => elapsed.value = _computeElapsed(),
+      );
+    }
+  }
+
   // ── Actions ──────────────────────────────────────────
-  void onStartOrEnd() {}
-  void onEditTrip() {}
+  void onStartOrEnd() {
+    if (isPending) _beginStartFlow();
+  }
+
+  /// Asks for the trip's intention first when it has none, then confirms.
+  Future<void> _beginStartFlow() async {
+    final current = trip.value;
+    if (current == null || isStarting.value) return;
+
+    String? intentionMessage;
+    if (!current.hasIntention) {
+      final saved = await TripIntentionDialog.show(
+        onSubmit: (type, tags, intention) async {
+          final message = await _saveIntention(type, tags, intention);
+          intentionMessage = message;
+          return message != null;
+        },
+      );
+      if (!saved) return;
+    }
+    _confirmStart(intentionMessage);
+  }
+
+  /// Returns the server message on success, null on failure.
+  Future<String?> _saveIntention(
+    IntentionType type,
+    List<String> tags,
+    String intention,
+  ) async {
+    final id = tripId;
+    if (id == null) return null;
+    try {
+      final response = await _tripRepository.saveIntention(
+        tripId: id,
+        type: type,
+        tags: tags,
+        intention: intention,
+      );
+      if (response.success != true) {
+        globalSnackBar(
+          title: 'Not Saved',
+          message: response.message ?? 'Unable to save your intention.',
+        );
+        return null;
+      }
+      trip.value = trip.value?.copyWith(
+        intention: response.intention ?? intention,
+        intentionType: response.intentionType ?? type.apiValue,
+        intentionTags: response.intentionTags.isEmpty
+            ? tags
+            : response.intentionTags,
+      );
+      return response.message ?? '';
+    } catch (e) {
+      handleException(e, context: 'Save Trip Intention');
+      return null;
+    }
+  }
+
+  void _confirmStart(String? intentionMessage) {
+    final thanks = (intentionMessage == null || intentionMessage.isEmpty)
+        ? ''
+        : '$intentionMessage\n';
+    AppBottomSheet.show(
+      sticker: Assets.images.excitedSticker.path,
+      title: 'Ready to Start Your Trip?',
+      description:
+          '${thanks}Once started, your trip timer begins and tracking goes live.',
+      actionWidget: Row(
+        children: [
+          Expanded(
+            child: GlobalButton(
+              text: 'Not Yet',
+              color: AppColor.primaryDisable,
+              textColor: AppColor.primary,
+              onTap: () {
+                if (!isStarting.value) Get.back();
+              },
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Obx(
+              () => GlobalButton(
+                text: 'Start Trip',
+                onTap: _startTrip,
+                widget: isStarting.value
+                    ? GlobalLoading(size: 22.sp, color: AppColor.white)
+                    : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _startTrip() async {
+    final id = tripId;
+    if (id == null || isStarting.value) return;
+    try {
+      isStarting.value = true;
+      final response = await _tripRepository.startTrip(id);
+      final data = response.data;
+      if (response.success != true || data == null) {
+        globalSnackBar(
+          title: 'Unable to Start',
+          message: response.message ?? 'Unable to start the trip.',
+        );
+        return;
+      }
+
+      _closeSnackbars();
+      if (Get.isBottomSheetOpen == true) Get.back();
+      _applyTrip(
+        data.tripIntervals.isEmpty
+            ? data.copyWith(
+                tripIntervals: trip.value?.tripIntervals ?? const [],
+              )
+            : data,
+      );
+      if (Get.isRegistered<ItineraryController>()) {
+        Get.find<ItineraryController>().refreshAll();
+      }
+      globalSnackBar(
+        title: 'Trip Started',
+        message: response.message ?? 'Your adventure has started.',
+        backgroundColor: AppColor.primary,
+      );
+    } catch (e) {
+      handleException(e, context: 'Start Trip');
+    } finally {
+      isStarting.value = false;
+    }
+  }
+
+  Future<void> onEditTrip() async {
+    final current = trip.value;
+    if (current == null) return;
+    final result = await Get.toNamed(
+      Routes.CREATE_NEW_TRIP,
+      arguments: current,
+    );
+    if (result is! TripResponse) return;
+    _returnToList();
+    globalSnackBar(
+      title: 'Trip Updated',
+      message: result.message ?? 'Trip updated successfully.',
+      backgroundColor: AppColor.primary,
+    );
+  }
+
+  /// Leaves the details screen and reloads the Itinerary list.
+  void _returnToList() {
+    if (Get.isRegistered<ItineraryController>()) {
+      Get.find<ItineraryController>().refreshAll();
+    }
+    _closeSnackbars();
+    Get.back();
+  }
+
+  /// While a snackbar is showing, `Get.back()` only closes the snackbar.
+  void _closeSnackbars() {
+    if (Get.isSnackbarOpen) Get.closeAllSnackbars();
+  }
+
   void onViewMap() => Get.toNamed(
     Routes.VIEW_ITINERARY_MAP,
-    arguments: {'days': days, 'title': tripTitle},
+    arguments: {'days': days.toList(), 'title': tripTitle},
   );
   void onGenerateStory() => StoryGeneratingDialog.show();
   void onManageDayPhotos(int day, String date) => Get.toNamed(
@@ -237,10 +393,15 @@ class ItineraryDetailsController extends GetxController {
           ),
           SizedBox(width: 12.w),
           Expanded(
-            child: GlobalButton(
-              text: 'Cancel Trip',
-              color: AppColor.error,
-              onTap: confirmCancel,
+            child: Obx(
+              () => GlobalButton(
+                text: 'Cancel Trip',
+                color: AppColor.error,
+                onTap: confirmCancel,
+                widget: isCancelling.value
+                    ? GlobalLoading(size: 22.sp, color: AppColor.white)
+                    : null,
+              ),
             ),
           ),
         ],
@@ -248,10 +409,43 @@ class ItineraryDetailsController extends GetxController {
     );
   }
 
-  void confirmCancel() {
-    Get.back(); // close sheet
-    Get.back(); // leave details screen
+  Future<void> confirmCancel() async {
+    final id = tripId;
+    if (id == null || isCancelling.value) return;
+    try {
+      isCancelling.value = true;
+      final response = await _tripRepository.deleteTrip(id);
+      if (response.success != true) {
+        globalSnackBar(
+          title: 'Unable to Cancel',
+          message: response.message ?? 'Unable to cancel the trip.',
+        );
+        return;
+      }
+
+      isCancelling.value = false;
+      _closeSnackbars();
+      if (Get.isBottomSheetOpen == true) Get.back();
+      _returnToList();
+      globalSnackBar(
+        title: 'Trip Cancelled',
+        message: response.message ?? 'Trip removed.',
+        backgroundColor: AppColor.primary,
+      );
+    } catch (e) {
+      handleException(e, context: 'Cancel Trip');
+    } finally {
+      isCancelling.value = false;
+    }
   }
 
-  void keepTrip() => Get.back();
+  void keepTrip() {
+    if (!isCancelling.value) Get.back();
+  }
+
+  @override
+  void onClose() {
+    _ticker?.cancel();
+    super.onClose();
+  }
 }

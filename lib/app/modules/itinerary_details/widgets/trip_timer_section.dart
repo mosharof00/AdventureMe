@@ -5,6 +5,7 @@ import 'package:adventureme/app/core/extensions/sizedbox_extension.dart';
 import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/global/widgets/app_text.dart';
+import 'package:adventureme/app/global/widgets/global_loading.dart';
 import 'package:adventureme/gen/assets.gen.dart';
 
 import '../controllers/itinerary_details_controller.dart';
@@ -14,26 +15,43 @@ class TripTimerSection extends GetView<ItineraryDetailsController> {
 
   @override
   Widget build(BuildContext context) {
-    if (controller.isCompleted) return const _CompletedCard();
+    return Obx(() {
+      if (controller.isCancelled) return const SizedBox.shrink();
+      if (controller.isCompleted) return const _CompletedCard();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        _TimerText(controller.timerText, fontSize: 40.sp),
-        24.height,
-        GestureDetector(
-          onTap: controller.onStartOrEnd,
-          child: Image.asset(
-            controller.isOngoing
-                ? Assets.images.endButton.path
-                : Assets.images.startButton.path,
-            width: 118.w,
-            height: 118.w,
-            fit: BoxFit.contain,
+      final isStarting = controller.isStarting.value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _TimerText(controller.timerText, fontSize: 40.sp),
+          24.height,
+          GestureDetector(
+            onTap: isStarting ? null : controller.onStartOrEnd,
+            child: SizedBox(
+              width: 118.w,
+              height: 118.w,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Opacity(
+                    opacity: isStarting ? 0.5 : 1,
+                    child: Image.asset(
+                      controller.isOngoing
+                          ? Assets.images.endButton.path
+                          : Assets.images.startButton.path,
+                      width: 118.w,
+                      height: 118.w,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  if (isStarting) const GlobalLoading(),
+                ],
+              ),
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }
 
@@ -75,7 +93,7 @@ class _CompletedCard extends GetView<ItineraryDetailsController> {
             maxLines: 2,
           ),
           10.height,
-          _TimerText(controller.timerText, fontSize: 34.sp),
+          Obx(() => _TimerText(controller.timerText, fontSize: 34.sp)),
         ],
       ),
     );
@@ -105,7 +123,10 @@ class _TimerText extends StatelessWidget {
         text: head,
         style: baseStyle.copyWith(color: const Color(0xFF2D2D2D)),
         children: [
-          TextSpan(text: tail, style: baseStyle.copyWith(color: AppColor.secondary)),
+          TextSpan(
+            text: tail,
+            style: baseStyle.copyWith(color: AppColor.secondary),
+          ),
         ],
       ),
     );

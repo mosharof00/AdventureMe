@@ -117,6 +117,27 @@ class CompletedItineraryCard extends GetView<ItineraryController> {
                   ],
                 ),
               ),
+              Positioned(
+                top: 10.h,
+                right: 10.w,
+                child: GestureDetector(
+                  onTap: () => controller.onEditThumbnail(trip),
+                  child: Container(
+                    width: 34.w,
+                    height: 34.w,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      shape: BoxShape.circle,
+                    ),
+                    child: AppSvgIcon(
+                      Assets.icons.editIcon,
+                      size: 16.sp,
+                      color: AppColor.white,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
           Padding(

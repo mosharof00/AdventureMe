@@ -4,6 +4,8 @@ import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/global/widgets/app_scaffold.dart';
 import 'package:adventureme/app/global/widgets/custom_appbar.dart';
+import 'package:adventureme/app/global/widgets/global_loading.dart';
+import 'package:adventureme/app/global/widgets/show_empty_result.dart';
 
 import '../controllers/itinerary_details_controller.dart';
 import '../widgets/photo_chapter_tab.dart';
@@ -22,32 +24,42 @@ class ItineraryDetailsView extends GetView<ItineraryDetailsController> {
           showBackButton: true,
           backgroundColor: Colors.transparent,
         ),
-        body: Column(
-          children: [
-            // const SizedBox(height: kToolbarHeight),
-            TabBar(
-              labelColor: AppColor.secondary,
-              unselectedLabelColor: AppColor.hintText,
-              indicatorColor: AppColor.secondary,
-              indicatorSize: TabBarIndicatorSize.tab,
-              indicatorWeight: 3,
-              dividerColor: AppColor.hintText.withValues(alpha: 0.15),
-              labelStyle: context.titleSmall.copyWith(fontWeight: FontWeight.w600),
-              unselectedLabelStyle: context.titleSmall,
-              tabs: const [
-                Tab(text: 'Timeline'),
-                Tab(text: 'Photo Chapter'),
-              ],
-            ),
-            const Expanded(
-              child: TabBarView(
-                children: [TimelineTab(), PhotoChapterTab()],
+        body: Obx(() {
+          if (controller.trip.value == null) {
+            if (controller.hasError.value) {
+              return ShowEmptyResult(
+                title: 'Unable to load this trip',
+                refreshOnTap: controller.fetchDetails,
+              );
+            }
+            return const GlobalLoading();
+          }
+
+          return Column(
+            children: [
+              TabBar(
+                labelColor: AppColor.secondary,
+                unselectedLabelColor: AppColor.hintText,
+                indicatorColor: AppColor.secondary,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorWeight: 3,
+                dividerColor: AppColor.hintText.withValues(alpha: 0.15),
+                labelStyle: context.titleSmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: context.titleSmall,
+                tabs: const [
+                  Tab(text: 'Timeline'),
+                  Tab(text: 'Photo Chapter'),
+                ],
               ),
-            ),
-          ],
-        ),
+              const Expanded(
+                child: TabBarView(children: [TimelineTab(), PhotoChapterTab()]),
+              ),
+            ],
+          );
+        }),
       ),
     );
   }
 }
-
