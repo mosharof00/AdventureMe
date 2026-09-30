@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:adventureme/app/core/constants/enums.dart';
 import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
+import 'package:adventureme/app/global/widgets/app_svg_icon.dart';
 import 'package:adventureme/app/global/widgets/app_text.dart';
 
 import '../controllers/manage_day_photos_controller.dart';
@@ -12,18 +14,19 @@ class PhotoCategoryTabs extends GetView<ManageDayPhotosController> {
 
   @override
   Widget build(BuildContext context) {
+    const categories = PhotoCategory.values;
     return Obx(
       () => Row(
         children: [
-          for (var i = 0; i < controller.categories.length; i++) ...[
+          for (var i = 0; i < categories.length; i++) ...[
             Expanded(
               child: _CategoryCard(
-                category: controller.categories[i],
-                isActive: controller.selected.value == i,
-                onTap: () => controller.selectCategory(i),
+                category: categories[i],
+                isActive: controller.selected.value == categories[i],
+                onTap: () => controller.selectCategory(categories[i]),
               ),
             ),
-            if (i != controller.categories.length - 1) 8.horizontalSpace,
+            if (i != categories.length - 1) 8.horizontalSpace,
           ],
         ],
       ),
@@ -47,45 +50,35 @@ class _CategoryCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 80.h,
-        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 8.h),
+        height: 68.h,
+        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 6.h),
         decoration: BoxDecoration(
           color: isActive ? AppColor.white : const Color(0xFFFBEFE0),
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-            color: isActive ? AppColor.secondary : Colors.transparent,
+            color: isActive
+                ? AppColor.secondary
+                : AppColor.amber.withAlpha(100),
             width: 1.4,
           ),
         ),
-        child: Stack(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: .start,
           children: [
-            if (isActive)
-              Align(
-                alignment: Alignment.topRight,
-                child: Icon(
-                  Icons.check,
-                  size: 14.sp,
-                  color: AppColor.secondary,
-                ),
-              ),
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(category.icon, size: 22.sp, color: AppColor.primary),
-                  6.verticalSpace,
-                  AppText(
-                    category.label,
-                    style: context.labelSmall.copyWith(
-                      color: const Color(0xFF2D2D2D),
-                      fontWeight: FontWeight.w500,
-                      height: 1.15,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                  ),
-                ],
-              ),
+            Row(
+              mainAxisAlignment: .spaceBetween,
+              children: [
+                AppSvgIcon(category.icon, size: 22.sp, color: AppColor.primary),
+                if (isActive)
+                  Icon(Icons.check, size: 18.sp, color: AppColor.secondary),
+              ],
+            ),
+            6.verticalSpace,
+            AppText(
+              category.label,
+              style: context.labelSmall.copyWith(fontWeight: FontWeight.w600),
+              maxLines: 2,
             ),
           ],
         ),

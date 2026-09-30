@@ -141,7 +141,7 @@ class HelperUtils {
       }
     }
 
-    Log.i("✅ Session restored\nUserId: $userId\nRole: $userRole");
+    Log.i("✅ Session restored\nUserId: $userId\nRole: $userRole Token: $token");
     return true;
   }
 

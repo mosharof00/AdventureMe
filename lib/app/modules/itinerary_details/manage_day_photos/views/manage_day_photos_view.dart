@@ -7,6 +7,7 @@ import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/global/widgets/app_scaffold.dart';
 import 'package:adventureme/app/global/widgets/app_text.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
+import 'package:adventureme/app/global/widgets/global_loading.dart';
 
 import '../controllers/manage_day_photos_controller.dart';
 import '../widgets/photo_category_tabs.dart';
@@ -167,28 +168,24 @@ class _BottomBar extends GetView<ManageDayPhotosController> {
       top: false,
       child: Padding(
         padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
-        child: Row(
-          children: [
-            Expanded(
-              child: GlobalButton(
-                text: 'Save as Draft',
-                color: AppColor.primaryDisable,
-                textColor: AppColor.primary,
-                onTap: controller.saveAsDraft,
-              ),
-            ),
-            12.width,
-            Expanded(
-              child: Obx(
-                () => GlobalButton(
-                  text: 'Continue',
-                  isDisabled: !controller.isDirty,
-                  onTap: controller.saveCategory,
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: Obx(() {
+          if (controller.hasPending) {
+            return GlobalButton(
+              text: 'Save as Draft',
+              color: AppColor.primaryDisable,
+              textColor: AppColor.primary,
+              onTap: controller.saveAsDraft,
+              widget: controller.isSaving.value
+                  ? GlobalLoading(size: 22.sp, color: AppColor.primary)
+                  : null,
+            );
+          }
+          return GlobalButton(
+            text: 'Continue',
+            isDisabled: !controller.hasDrafts,
+            onTap: controller.onContinue,
+          );
+        }),
       ),
     );
   }

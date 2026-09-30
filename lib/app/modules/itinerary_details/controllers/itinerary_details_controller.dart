@@ -40,11 +40,13 @@ class TripCheckpoint {
 
 class TrackingDay {
   const TrackingDay({
+    this.dayNumber = 0,
     required this.dayLabel,
     required this.date,
     required this.checkpoints,
   });
 
+  final int dayNumber;
   final String dayLabel;
   final String date;
   final List<TripCheckpoint> checkpoints;
@@ -97,6 +99,7 @@ class ItineraryDetailsController extends GetxController {
       final data = response.data;
       if (response.success == true && data != null) {
         _applyTrip(data);
+        _askIntentionIfMissing(data);
       } else {
         hasError.value = trip.value == null;
         globalSnackBar(
@@ -118,6 +121,7 @@ class ItineraryDetailsController extends GetxController {
     days.assignAll([
       for (final interval in data.tripIntervals)
         TrackingDay(
+          dayNumber: interval.dayNumber ?? 0,
           dayLabel: 'Day ${interval.dayNumber ?? '-'}',
           date: interval.date == null ? '--' : _dayDate.format(interval.date!),
           checkpoints: const [],
@@ -199,36 +203,42 @@ class ItineraryDetailsController extends GetxController {
 
   // ── Actions ──────────────────────────────────────────
   void onStartOrEnd() {
-    if (isPending) _beginStartFlow();
+    if (isPending && trip.value != null && !isStarting.value) _confirmStart();
   }
 
-  /// Asks for the trip's intention first when it has none, then confirms.
-  Future<void> _beginStartFlow() async {
-    final current = trip.value;
-    if (current == null || isStarting.value) return;
+  // ── Intention ────────────────────────────────────────
+  /// Asked at most once per visit, so a refresh doesn't re-open it.
+  bool _intentionAsked = false;
 
-    String? intentionMessage;
-    if (!current.hasIntention) {
-      final saved = await TripIntentionDialog.show(
-        onSubmit: (type, tags, intention) async {
-          final message = await _saveIntention(type, tags, intention);
-          intentionMessage = message;
-          return message != null;
-        },
-      );
-      if (!saved) return;
+  Future<void> _askIntentionIfMissing(TripData data) async {
+    final needsIntention = data.tripStatus == TripStatus.pending ||
+        data.tripStatus == TripStatus.active;
+    if (isClosed || _intentionAsked || !needsIntention || data.hasIntention) {
+      return;
     }
-    _confirmStart(intentionMessage);
+    _intentionAsked = true;
+
+    final saved = await TripIntentionDialog.show();
+    if (saved) {
+      globalSnackBar(
+        title: 'Intention Saved',
+        message: _intentionMessage ??
+            'Thank you. This will help us tell your story.',
+        backgroundColor: AppColor.primary,
+      );
+    }
   }
 
-  /// Returns the server message on success, null on failure.
-  Future<String?> _saveIntention(
+  String? _intentionMessage;
+
+  /// Called by [TripIntentionDialog]; returns whether it was saved.
+  Future<bool> saveIntention(
     IntentionType type,
     List<String> tags,
     String intention,
   ) async {
     final id = tripId;
-    if (id == null) return null;
+    if (id == null) return false;
     try {
       final response = await _tripRepository.saveIntention(
         tripId: id,
@@ -241,7 +251,7 @@ class ItineraryDetailsController extends GetxController {
           title: 'Not Saved',
           message: response.message ?? 'Unable to save your intention.',
         );
-        return null;
+        return false;
       }
       trip.value = trip.value?.copyWith(
         intention: response.intention ?? intention,
@@ -250,22 +260,20 @@ class ItineraryDetailsController extends GetxController {
             ? tags
             : response.intentionTags,
       );
-      return response.message ?? '';
+      _intentionMessage = response.message;
+      return true;
     } catch (e) {
       handleException(e, context: 'Save Trip Intention');
-      return null;
+      return false;
     }
   }
 
-  void _confirmStart(String? intentionMessage) {
-    final thanks = (intentionMessage == null || intentionMessage.isEmpty)
-        ? ''
-        : '$intentionMessage\n';
+  void _confirmStart() {
     AppBottomSheet.show(
       sticker: Assets.images.excitedSticker.path,
       title: 'Ready to Start Your Trip?',
       description:
-          '${thanks}Once started, your trip timer begins and tracking goes live.',
+          'Once started, your trip timer begins and tracking goes live.',
       actionWidget: Row(
         children: [
           Expanded(
@@ -369,10 +377,13 @@ class ItineraryDetailsController extends GetxController {
     arguments: {'days': days.toList(), 'title': tripTitle},
   );
   void onGenerateStory() => StoryGeneratingDialog.show();
-  void onManageDayPhotos(int day, String date) => Get.toNamed(
-    Routes.MANAGE_DAY_PHOTOS,
-    arguments: {'day': day, 'date': date},
-  );
+  void onManageDayPhotos(TrackingDay day) {
+    if (tripId == null) return;
+    Get.toNamed(
+      Routes.MANAGE_DAY_PHOTOS,
+      arguments: {'tripId': tripId, 'day': day.dayNumber, 'date': day.date},
+    );
+  }
   void onCheckpointDetails() {}
 
   void onCancelTrip() {

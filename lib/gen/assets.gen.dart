@@ -35,6 +35,9 @@ class $AssetsIconsGen {
   /// File path: assets/icons/clock_icon.svg
   String get clockIcon => 'assets/icons/clock_icon.svg';
 
+  /// File path: assets/icons/diamond_icon.svg
+  String get diamondIcon => 'assets/icons/diamond_icon.svg';
+
   /// File path: assets/icons/edit_icon.svg
   String get editIcon => 'assets/icons/edit_icon.svg';
 
@@ -43,6 +46,9 @@ class $AssetsIconsGen {
 
   /// File path: assets/icons/flash_icon.svg
   String get flashIcon => 'assets/icons/flash_icon.svg';
+
+  /// File path: assets/icons/gallery_icon.svg
+  String get galleryIcon => 'assets/icons/gallery_icon.svg';
 
   /// File path: assets/icons/home_fill_icon.svg
   String get homeFillIcon => 'assets/icons/home_fill_icon.svg';
@@ -61,6 +67,9 @@ class $AssetsIconsGen {
 
   /// File path: assets/icons/location_icon.svg
   String get locationIcon => 'assets/icons/location_icon.svg';
+
+  /// File path: assets/icons/lovely_icon.svg
+  String get lovelyIcon => 'assets/icons/lovely_icon.svg';
 
   /// File path: assets/icons/menu_icon.svg
   String get menuIcon => 'assets/icons/menu_icon.svg';
@@ -81,6 +90,12 @@ class $AssetsIconsGen {
   /// File path: assets/icons/radio_red_icon.svg
   String get radioRedIcon => 'assets/icons/radio_red_icon.svg';
 
+  /// File path: assets/icons/star_icon.svg
+  String get starIcon => 'assets/icons/star_icon.svg';
+
+  /// File path: assets/icons/upload_icon.svg
+  String get uploadIcon => 'assets/icons/upload_icon.svg';
+
   /// File path: assets/icons/user_fill_icon.svg
   String get userFillIcon => 'assets/icons/user_fill_icon.svg';
 
@@ -89,6 +104,9 @@ class $AssetsIconsGen {
 
   /// File path: assets/icons/verified_badge_icon.svg
   String get verifiedBadgeIcon => 'assets/icons/verified_badge_icon.svg';
+
+  /// File path: assets/icons/watch_icon.svg
+  String get watchIcon => 'assets/icons/watch_icon.svg';
 
   /// List of all assets
   List<String> get values => [
@@ -99,24 +117,30 @@ class $AssetsIconsGen {
     blockIcon,
     calendarIcon,
     clockIcon,
+    diamondIcon,
     editIcon,
     emailFillIcon,
     flashIcon,
+    galleryIcon,
     homeFillIcon,
     homeIcon,
     itineraryFillIcon,
     itineraryIcon,
     locationCrossIcon,
     locationIcon,
+    lovelyIcon,
     menuIcon,
     notificationFillIcon,
     notificationIcon,
     notificationRoundedIcon,
     radioBlueIcon,
     radioRedIcon,
+    starIcon,
+    uploadIcon,
     userFillIcon,
     userIcon,
     verifiedBadgeIcon,
+    watchIcon,
   ];
 }
 

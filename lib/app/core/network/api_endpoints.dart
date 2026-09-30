@@ -50,6 +50,12 @@ class ApiEndpoint {
   static String startTrip(String tripId) => '$trips/$tripId/start'; // post
   static String tripIntention(String tripId) =>
       '$trips/$tripId/intention'; // post
+  static String dayPhotos(String tripId, int day) =>
+      '$trips/$tripId/days/$day/photos'; // get, post (multipart)
+  static String finalizeDayPhotos(String tripId, int day) =>
+      '$trips/$tripId/days/$day/photos/finalize'; // post
+  static String tripPhoto(String tripId, String photoId) =>
+      '$trips/$tripId/photos/$photoId'; // delete
   static String tripThumbnail(String tripId) =>
       '$trips/$tripId/thumbnail'; // post (multipart)
 

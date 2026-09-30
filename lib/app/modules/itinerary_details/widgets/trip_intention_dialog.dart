@@ -10,22 +10,15 @@ import 'package:adventureme/app/global/widgets/app_text.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
 import 'package:adventureme/app/global/widgets/global_loading.dart';
 
-typedef IntentionSubmit =
-    Future<bool> Function(
-      IntentionType type,
-      List<String> tags,
-      String intention,
-    );
+import '../controllers/itinerary_details_controller.dart';
 
-/// Collects the trip's intention; pops `true` once [onSubmit] succeeds.
+/// Collects the trip's intention; pops `true` once it is saved.
 class TripIntentionDialog extends StatefulWidget {
-  const TripIntentionDialog({super.key, required this.onSubmit});
+  const TripIntentionDialog({super.key});
 
-  final IntentionSubmit onSubmit;
-
-  static Future<bool> show({required IntentionSubmit onSubmit}) async {
+  static Future<bool> show() async {
     final saved = await Get.dialog<bool>(
-      TripIntentionDialog(onSubmit: onSubmit),
+      const TripIntentionDialog(),
       barrierDismissible: false,
     );
     return saved == true;
@@ -81,7 +74,11 @@ class _TripIntentionDialogState extends State<TripIntentionDialog> {
 
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _saving = true);
-    final ok = await widget.onSubmit(type, List.of(_tags), intention);
+    final ok = await Get.find<ItineraryDetailsController>().saveIntention(
+      type,
+      List.of(_tags),
+      intention,
+    );
     if (!mounted) return;
     setState(() => _saving = false);
     if (ok) _close(true);

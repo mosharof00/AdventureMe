@@ -47,10 +47,8 @@ class TimelineTab extends GetView<ItineraryDetailsController> {
                 TrackingDayCard(
                   day: controller.days[i],
                   isDone: controller.isDayDone(i),
-                  onManagePhotos: () => controller.onManageDayPhotos(
-                    i + 1,
-                    controller.days[i].date,
-                  ),
+                  onManagePhotos: () =>
+                      controller.onManageDayPhotos(controller.days[i]),
                 ),
                 if (i != controller.days.length - 1) 16.height,
               ],

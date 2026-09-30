@@ -24,22 +24,22 @@ enum TripStatus {
   }
 
   Color get color => switch (this) {
-        TripStatus.active => const Color(0xFF1E8E5A),
-        TripStatus.paused => const Color(0xFF3B6FB6),
-        TripStatus.completed => const Color(0xFF1E8E5A),
-        TripStatus.cancelled => const Color(0xFFC0392B),
-        TripStatus.draft => const Color(0xFF6B6B6B),
-        TripStatus.pending => const Color(0xFF8B6914),
-      };
+    TripStatus.active => const Color(0xFF1E8E5A),
+    TripStatus.paused => const Color(0xFF3B6FB6),
+    TripStatus.completed => const Color(0xFF1E8E5A),
+    TripStatus.cancelled => const Color(0xFFC0392B),
+    TripStatus.draft => const Color(0xFF6B6B6B),
+    TripStatus.pending => const Color(0xFF8B6914),
+  };
 
   Color get backgroundColor => switch (this) {
-        TripStatus.active => const Color(0xFFDDF3E5),
-        TripStatus.paused => const Color(0xFFDDE8F7),
-        TripStatus.completed => const Color(0xFFDDF3E5),
-        TripStatus.cancelled => const Color(0xFFF8DEDB),
-        TripStatus.draft => const Color(0xFFEDEDED),
-        TripStatus.pending => const Color(0xFFF5E6C8),
-      };
+    TripStatus.active => const Color(0xFFDDF3E5),
+    TripStatus.paused => const Color(0xFFDDE8F7),
+    TripStatus.completed => const Color(0xFFDDF3E5),
+    TripStatus.cancelled => const Color(0xFFF8DEDB),
+    TripStatus.draft => const Color(0xFFEDEDED),
+    TripStatus.pending => const Color(0xFFF5E6C8),
+  };
 }
 
 /// Why the user is taking a trip (`intention_type`).
@@ -66,6 +66,30 @@ enum IntentionType {
     }
     return null;
   }
+}
+
+/// Fixed photo categories of a trip day (`category`).
+enum PhotoCategory {
+  favoriteImage(
+    'FAVORITE_IMAGE',
+    'Favorite Image',
+    'assets/icons/star_icon.svg',
+  ),
+  bestMoment('BEST_MOMENT', 'Best Moment', 'assets/icons/gallery_icon.svg'),
+  hiddenGem('HIDDEN_GEM', 'Hidden Gem', 'assets/icons/diamond_icon.svg'),
+  suddenAdventure(
+    'SUDDEN_ADVENTURE',
+    'Sudden Adventure',
+    'assets/icons/lovely_icon.svg',
+  );
+
+  const PhotoCategory(this.apiValue, this.label, this.icon);
+
+  final String apiValue;
+  final String label;
+
+  /// SVG asset path (enum values must be const, so not `Assets.icons.*`).
+  final String icon;
 }
 
 /// Tabs on the Itinerary screen; [status] is the API filter (null = all).

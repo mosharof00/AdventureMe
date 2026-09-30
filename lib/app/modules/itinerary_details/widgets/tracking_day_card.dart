@@ -43,7 +43,9 @@ class TrackingDayCard extends GetView<ItineraryDetailsController> {
         children: [
           _header(context),
           16.height,
-          if (isDone) ..._doneContent(context) else _emptyState(context),
+          if (isDone) ..._checkpoints() else _emptyState(context),
+          12.height,
+          _actions(),
         ],
       ),
     );
@@ -122,42 +124,43 @@ class TrackingDayCard extends GetView<ItineraryDetailsController> {
             textAlign: TextAlign.center,
             maxLines: 2,
           ),
-          6.height,
         ],
       ),
     );
   }
 
-  List<Widget> _doneContent(BuildContext context) {
+  List<Widget> _checkpoints() {
     return [
       for (var i = 0; i < day.checkpoints.length; i++)
         _CheckpointTile(
           checkpoint: day.checkpoints[i],
           isLast: i == day.checkpoints.length - 1,
         ),
-      12.height,
-      Row(
-        children: [
-          Expanded(
-            child: GlobalButton(
-              text: controller.photoActionLabel,
-              height: 40.h,
-              onTap: onManagePhotos ?? () {},
-            ),
-          ),
-          12.width,
-          Expanded(
-            child: GlobalButton(
-              text: 'View Details',
-              height: 40.h,
-              color: AppColor.primaryDisable,
-              textColor: const Color(0xFF2D2D2D),
-              onTap: controller.onCheckpointDetails,
-            ),
-          ),
-        ],
-      ),
     ];
+  }
+
+  Widget _actions() {
+    return Row(
+      children: [
+        Expanded(
+          child: GlobalButton(
+            text: controller.photoActionLabel,
+            height: 40.h,
+            onTap: onManagePhotos ?? () {},
+          ),
+        ),
+        12.width,
+        Expanded(
+          child: GlobalButton(
+            text: 'View Details',
+            height: 40.h,
+            color: AppColor.primaryDisable,
+            textColor: const Color(0xFF2D2D2D),
+            onTap: controller.onCheckpointDetails,
+          ),
+        ),
+      ],
+    );
   }
 }
 
