@@ -15,6 +15,7 @@ class AppScaffold extends StatelessWidget {
     this.gradient,
     this.bottomNavigationBar,
     this.floatingActionButton,
+    this.floatingActionButtonLocation,
     this.resizeToAvoidBottomInset,
     this.extendBodyBehindAppBar = true,
   });
@@ -33,6 +34,7 @@ class AppScaffold extends StatelessWidget {
   final Gradient? gradient;
   final Widget? bottomNavigationBar;
   final Widget? floatingActionButton;
+  final FloatingActionButtonLocation? floatingActionButtonLocation;
   final bool? resizeToAvoidBottomInset;
   final bool extendBodyBehindAppBar;
 
@@ -44,7 +46,8 @@ class AppScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: hasAppBar && extendBodyBehindAppBar,
-      appBar: appBar ??
+      appBar:
+          appBar ??
           (appbarTitle != null
               ? CustomAppBar(
                   title: appbarTitle,
@@ -57,6 +60,7 @@ class AppScaffold extends StatelessWidget {
               : null),
       bottomNavigationBar: bottomNavigationBar,
       floatingActionButton: floatingActionButton,
+      floatingActionButtonLocation: floatingActionButtonLocation,
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
       body: Container(
         width: double.infinity,

@@ -11,7 +11,6 @@ import 'package:adventureme/app/modules/main_page/controllers/main_page_controll
 import 'package:adventureme/gen/assets.gen.dart';
 
 import '../controllers/archive_controller.dart';
-import '../widgets/archive_sort_tabs.dart';
 import '../widgets/archive_story_card.dart';
 
 class ArchiveView extends GetView<ArchiveController> {
@@ -35,8 +34,8 @@ class ArchiveView extends GetView<ArchiveController> {
               _buildTitle(context),
               20.height,
               const _SearchBar(),
-              18.height,
-              const ArchiveSortTabs(),
+              // 18.height,
+              // const ArchiveSortTabs(),
               20.height,
               ...List.generate(
                 controller.stories.length,
@@ -139,7 +138,14 @@ class _SearchBar extends GetView<ArchiveController> {
         hintText: 'Search Itinerary',
         borderRadius: 30,
         enabledBorderColor: AppColor.hintText.withValues(alpha: 0.2),
-        prefixIcon: Icon(Icons.search, size: 20.sp, color: AppColor.hintText),
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(left: 16.w),
+          child: AppSvgIcon(Assets.icons.searchIcon, color: AppColor.hintText),
+        ),
+        suffixIcon: Padding(
+          padding: EdgeInsets.only(right: 16.w),
+          child: AppSvgIcon(Assets.icons.filterIcon, color: AppColor.hintText),
+        ),
       ),
     );
   }

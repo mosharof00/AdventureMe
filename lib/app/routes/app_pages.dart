@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 
+import '../modules/archive/archive_details/bindings/archive_details_binding.dart';
+import '../modules/archive/archive_details/views/archive_details_view.dart';
 import '../modules/archive/bindings/archive_binding.dart';
 import '../modules/archive/views/archive_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
@@ -133,6 +135,13 @@ class AppPages {
       name: _Paths.ARCHIVE,
       page: () => const ArchiveView(),
       binding: ArchiveBinding(),
+      children: [
+        GetPage(
+          name: _Paths.ARCHIVE_DETAILS,
+          page: () => const ArchiveDetailsView(),
+          binding: ArchiveDetailsBinding(),
+        ),
+      ],
     ),
     GetPage(
       name: _Paths.CREATE_NEW_TRIP,

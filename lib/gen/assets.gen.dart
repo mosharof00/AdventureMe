@@ -20,6 +20,12 @@ class $AssetsIconsGen {
   /// File path: assets/icons/arrow_forword_icon.svg
   String get arrowForwordIcon => 'assets/icons/arrow_forword_icon.svg';
 
+  /// File path: assets/icons/arrows_down_icon.svg
+  String get arrowsDownIcon => 'assets/icons/arrows_down_icon.svg';
+
+  /// File path: assets/icons/arrows_up_icon.svg
+  String get arrowsUpIcon => 'assets/icons/arrows_up_icon.svg';
+
   /// File path: assets/icons/back_arrow_icon.svg
   String get backArrowIcon => 'assets/icons/back_arrow_icon.svg';
 
@@ -28,6 +34,15 @@ class $AssetsIconsGen {
 
   /// File path: assets/icons/block_icon.svg
   String get blockIcon => 'assets/icons/block_icon.svg';
+
+  /// File path: assets/icons/bookmark_fill_icon.svg
+  String get bookmarkFillIcon => 'assets/icons/bookmark_fill_icon.svg';
+
+  /// File path: assets/icons/bookmark_icon.svg
+  String get bookmarkIcon => 'assets/icons/bookmark_icon.svg';
+
+  /// File path: assets/icons/bottom_arrows_icon.svg
+  String get bottomArrowsIcon => 'assets/icons/bottom_arrows_icon.svg';
 
   /// File path: assets/icons/calendar_icon.svg
   String get calendarIcon => 'assets/icons/calendar_icon.svg';
@@ -43,6 +58,9 @@ class $AssetsIconsGen {
 
   /// File path: assets/icons/email_fill_icon.svg
   String get emailFillIcon => 'assets/icons/email_fill_icon.svg';
+
+  /// File path: assets/icons/filter_icon.svg
+  String get filterIcon => 'assets/icons/filter_icon.svg';
 
   /// File path: assets/icons/flash_icon.svg
   String get flashIcon => 'assets/icons/flash_icon.svg';
@@ -68,6 +86,9 @@ class $AssetsIconsGen {
   /// File path: assets/icons/location_icon.svg
   String get locationIcon => 'assets/icons/location_icon.svg';
 
+  /// File path: assets/icons/log_out_icon.svg
+  String get logOutIcon => 'assets/icons/log_out_icon.svg';
+
   /// File path: assets/icons/lovely_icon.svg
   String get lovelyIcon => 'assets/icons/lovely_icon.svg';
 
@@ -89,6 +110,18 @@ class $AssetsIconsGen {
 
   /// File path: assets/icons/radio_red_icon.svg
   String get radioRedIcon => 'assets/icons/radio_red_icon.svg';
+
+  /// File path: assets/icons/scan_icon.svg
+  String get scanIcon => 'assets/icons/scan_icon.svg';
+
+  /// File path: assets/icons/search_icon.svg
+  String get searchIcon => 'assets/icons/search_icon.svg';
+
+  /// File path: assets/icons/share_fill_icon.svg
+  String get shareFillIcon => 'assets/icons/share_fill_icon.svg';
+
+  /// File path: assets/icons/share_icon.svg
+  String get shareIcon => 'assets/icons/share_icon.svg';
 
   /// File path: assets/icons/star_icon.svg
   String get starIcon => 'assets/icons/star_icon.svg';
@@ -112,14 +145,20 @@ class $AssetsIconsGen {
   List<String> get values => [
     arrowBackIcon,
     arrowForwordIcon,
+    arrowsDownIcon,
+    arrowsUpIcon,
     backArrowIcon,
     blockFillIcon,
     blockIcon,
+    bookmarkFillIcon,
+    bookmarkIcon,
+    bottomArrowsIcon,
     calendarIcon,
     clockIcon,
     diamondIcon,
     editIcon,
     emailFillIcon,
+    filterIcon,
     flashIcon,
     galleryIcon,
     homeFillIcon,
@@ -128,6 +167,7 @@ class $AssetsIconsGen {
     itineraryIcon,
     locationCrossIcon,
     locationIcon,
+    logOutIcon,
     lovelyIcon,
     menuIcon,
     notificationFillIcon,
@@ -135,6 +175,10 @@ class $AssetsIconsGen {
     notificationRoundedIcon,
     radioBlueIcon,
     radioRedIcon,
+    scanIcon,
+    searchIcon,
+    shareFillIcon,
+    shareIcon,
     starIcon,
     uploadIcon,
     userFillIcon,

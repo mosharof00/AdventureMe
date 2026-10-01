@@ -48,6 +48,8 @@ class ArchiveController extends GetxController {
   }
 
   void onShare(ArchiveStory story) {}
+  void onStoryTap(ArchiveStory story) =>
+      Get.toNamed(Routes.ARCHIVE_DETAILS, arguments: story);
   void onNotifications() => Get.toNamed(Routes.NOTIFICATIONS);
 
   final stories = const <ArchiveStory>[
@@ -60,8 +62,7 @@ class ArchiveController extends GetxController {
       imageUrl:
           'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
       authorName: 'Jack Kargille',
-      authorAvatar:
-          'https://randomuser.me/api/portraits/men/32.jpg',
+      authorAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
     ),
     ArchiveStory(
       id: 'story_2',
@@ -72,8 +73,7 @@ class ArchiveController extends GetxController {
       imageUrl:
           'https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=800',
       authorName: 'Jack Kargille',
-      authorAvatar:
-          'https://randomuser.me/api/portraits/men/32.jpg',
+      authorAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
     ),
     ArchiveStory(
       id: 'story_3',
@@ -84,8 +84,7 @@ class ArchiveController extends GetxController {
       imageUrl:
           'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800',
       authorName: 'Jack Kargille',
-      authorAvatar:
-          'https://randomuser.me/api/portraits/men/32.jpg',
+      authorAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
     ),
   ];
 

@@ -23,105 +23,108 @@ class ArchiveStoryCard extends GetView<ArchiveController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18.r),
-            child: Stack(
-              children: [
-                CachedImage(
-                  imgUrl: story.imageUrl,
-                  width: double.infinity,
-                  height: 200.h,
-                  fit: BoxFit.cover,
-                ),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.center,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.75),
-                        ],
+          GestureDetector(
+            onTap: () => controller.onStoryTap(story),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18.r),
+              child: Stack(
+                children: [
+                  CachedImage(
+                    imgUrl: story.imageUrl,
+                    width: double.infinity,
+                    height: 200.h,
+                    fit: BoxFit.cover,
+                  ),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.center,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.75),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                // View count badge
-                Positioned(
-                  left: 12.w,
-                  top: 12.h,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 5.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(20.r),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.remove_red_eye_outlined,
-                          size: 14.sp,
-                          color: AppColor.white,
-                        ),
-                        5.width,
-                        AppText(
-                          story.views,
-                          style: context.labelSmall.copyWith(
-                            color: AppColor.white,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Title + location
-                Positioned(
-                  left: 14.w,
-                  right: 14.w,
-                  bottom: 14.h,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText(
-                        story.title,
-                        style: context.titleMedium.copyWith(
-                          color: AppColor.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 2,
+                  // View count badge
+                  Positioned(
+                    left: 12.w,
+                    top: 12.h,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 5.h,
                       ),
-                      8.height,
-                      Row(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          AppSvgIcon(
-                            Assets.icons.locationIcon,
-                            size: 13.sp,
+                          Icon(
+                            Icons.remove_red_eye_outlined,
+                            size: 14.sp,
                             color: AppColor.white,
                           ),
                           5.width,
-                          Flexible(
-                            child: AppText(
-                              '${story.location}  -  ${story.dateRange}',
-                              style: context.labelSmall.copyWith(
-                                color: AppColor.white,
-                              ),
-                              maxLines: 1,
+                          AppText(
+                            story.views,
+                            style: context.labelSmall.copyWith(
+                              color: AppColor.white,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+
+                  // Title + location
+                  Positioned(
+                    left: 14.w,
+                    right: 14.w,
+                    bottom: 14.h,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          story.title,
+                          style: context.titleMedium.copyWith(
+                            color: AppColor.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 2,
+                        ),
+                        8.height,
+                        Row(
+                          children: [
+                            AppSvgIcon(
+                              Assets.icons.locationIcon,
+                              size: 13.sp,
+                              color: AppColor.white,
+                            ),
+                            5.width,
+                            Flexible(
+                              child: AppText(
+                                '${story.location}  -  ${story.dateRange}',
+                                style: context.labelSmall.copyWith(
+                                  color: AppColor.white,
+                                ),
+                                maxLines: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           10.height,
