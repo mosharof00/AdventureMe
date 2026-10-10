@@ -7,6 +7,7 @@ import 'package:adventureme/app/core/network/api_endpoints.dart';
 import 'package:adventureme/app/core/constants/enums.dart';
 import 'package:adventureme/app/data/models/trip_models/day_photos_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_memory_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
 
 abstract class ITripRepository {
@@ -77,6 +78,15 @@ abstract class ITripRepository {
   });
 
   Future<PhotosActionResponse> deletePhoto(String tripId, String photoId);
+
+  /// Saves a quick note ([text]) or a voice recording ([voice]) for a day.
+  Future<TripMemoryResponse> addMemory({
+    required String tripId,
+    required int day,
+    required MemorySource source,
+    String? text,
+    File? voice,
+  });
 }
 
 class TripRepository implements ITripRepository {
@@ -304,6 +314,33 @@ class TripRepository implements ITripRepository {
       () => _client.dio.delete(ApiEndpoint.tripPhoto(tripId, photoId)),
       (dynamic data) => PhotosActionResponse.fromJson(data),
       'Delete Photo',
+    );
+  }
+
+  @override
+  Future<TripMemoryResponse> addMemory({
+    required String tripId,
+    required int day,
+    required MemorySource source,
+    String? text,
+    File? voice,
+  }) async {
+    final formData = FormData.fromMap({
+      'day_number': day.toString(),
+      'source': source.apiValue,
+      if (text != null && text.isNotEmpty) 'text': text,
+      if (voice != null)
+        'voice': await MultipartFile.fromFile(
+          voice.path,
+          filename: voice.path.split(Platform.pathSeparator).last,
+          contentType: DioMediaType('audio', 'mp4'),
+        ),
+    });
+
+    return _client.handleRequest(
+      () => _client.dio.post(ApiEndpoint.tripMemories(tripId), data: formData),
+      (dynamic data) => TripMemoryResponse.fromJson(data),
+      'Add Trip Memory',
     );
   }
 

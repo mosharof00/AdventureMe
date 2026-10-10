@@ -58,6 +58,8 @@ class ApiEndpoint {
       '$trips/$tripId/photos/$photoId'; // delete
   static String tripThumbnail(String tripId) =>
       '$trips/$tripId/thumbnail'; // post (multipart)
+  static String tripMemories(String tripId) =>
+      '$trips/$tripId/memories'; // post (multipart)
 
   /// user profile
   static const String profileDetails = '$baseUrl/profile/details'; // get

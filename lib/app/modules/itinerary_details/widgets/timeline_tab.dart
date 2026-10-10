@@ -67,35 +67,72 @@ class _ActionButtons extends GetView<ItineraryDetailsController> {
 
   @override
   Widget build(BuildContext context) {
+    final canGenerate = controller.isCompleted;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         children: [
+          if (controller.isActive) ...[
+            GlobalButton(
+              text: '',
+              onTap: controller.onAddMemory,
+              color: AppColor.white,
+              borderColor: AppColor.primary,
+              widget: _IconLabel(
+                icon: Icons.add_comment_outlined,
+                label: 'Add Memory',
+                color: AppColor.primary,
+              ),
+            ),
+            12.height,
+          ],
           GlobalButton(text: 'View Map', onTap: controller.onViewMap),
           12.height,
           GlobalButton(
             text: '',
             onTap: controller.onGenerateStory,
+            isDisabled: !canGenerate,
             gradient: const LinearGradient(
               colors: [AppColor.secondary, Color(0xFF8A7CFF)],
             ),
-            widget: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.auto_awesome, color: AppColor.white, size: 18.sp),
-                8.width,
-                AppText(
-                  'Generate Story',
-                  style: context.titleSmall.copyWith(
-                    color: AppColor.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+            widget: _IconLabel(
+              icon: Icons.auto_awesome,
+              label: 'Generate Story',
+              color: canGenerate ? AppColor.white : AppColor.hintText,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _IconLabel extends StatelessWidget {
+  const _IconLabel({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: color, size: 18.sp),
+        8.width,
+        AppText(
+          label,
+          style: context.titleSmall.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }

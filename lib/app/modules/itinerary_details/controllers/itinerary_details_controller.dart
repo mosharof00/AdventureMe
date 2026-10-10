@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -15,6 +16,7 @@ import 'package:adventureme/app/global/widgets/global_button.dart';
 import 'package:adventureme/app/global/widgets/global_loading.dart';
 import 'package:adventureme/app/global/widgets/global_snackbar.dart';
 import 'package:adventureme/app/modules/itinerary/controllers/itinerary_controller.dart';
+import 'package:adventureme/app/modules/itinerary_details/widgets/add_memory_dialog.dart';
 import 'package:adventureme/app/modules/itinerary_details/widgets/story_generating_dialog.dart';
 import 'package:adventureme/app/modules/itinerary_details/widgets/trip_intention_dialog.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
@@ -152,6 +154,7 @@ class ItineraryDetailsController extends GetxController {
       status.value == TripStatus.pending || status.value == TripStatus.draft;
   bool get isOngoing =>
       status.value == TripStatus.active || status.value == TripStatus.paused;
+  bool get isActive => status.value == TripStatus.active;
   bool get isCompleted => status.value == TripStatus.completed;
   bool get isCancelled => status.value == TripStatus.cancelled;
 
@@ -372,11 +375,78 @@ class ItineraryDetailsController extends GetxController {
     if (Get.isSnackbarOpen) Get.closeAllSnackbars();
   }
 
+  // ── Memories ─────────────────────────────────────────
+  Future<void> onAddMemory() async {
+    if (!isActive || days.isEmpty) return;
+    final saved = await AddMemoryDialog.show();
+    if (saved) {
+      globalSnackBar(
+        title: 'Memory Saved',
+        message: _memoryMessage ?? 'Your memory has been saved.',
+        backgroundColor: AppColor.primary,
+      );
+    }
+  }
+
+  /// Today's day of the trip, clamped to the first/last day.
+  int get todayDayNumber {
+    final numbers = days.map((d) => d.dayNumber).toList();
+    if (numbers.isEmpty) return 1;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    for (final interval in trip.value?.tripIntervals ?? const <TripInterval>[]) {
+      final date = interval.date?.toLocal();
+      if (date == null) continue;
+      if (DateTime(date.year, date.month, date.day) == today) {
+        return interval.dayNumber ?? numbers.first;
+      }
+    }
+    final start = trip.value?.startingDate;
+    if (start != null && today.isBefore(start)) return numbers.first;
+    return numbers.last;
+  }
+
+  /// Called by [AddMemoryDialog]; returns whether it was saved.
+  Future<bool> saveMemory({
+    required int day,
+    required MemorySource source,
+    String? text,
+    File? voice,
+  }) async {
+    final id = tripId;
+    if (id == null) return false;
+    try {
+      final response = await _tripRepository.addMemory(
+        tripId: id,
+        day: day,
+        source: source,
+        text: text,
+        voice: voice,
+      );
+      if (response.success != true) {
+        globalSnackBar(
+          title: 'Not Saved',
+          message: response.message ?? 'Unable to save your memory.',
+        );
+        return false;
+      }
+      _memoryMessage = response.message;
+      return true;
+    } catch (e) {
+      handleException(e, context: 'Add Trip Memory');
+      return false;
+    }
+  }
+
+  String? _memoryMessage;
+
   void onViewMap() => Get.toNamed(
     Routes.VIEW_ITINERARY_MAP,
     arguments: {'days': days.toList(), 'title': tripTitle},
   );
-  void onGenerateStory() => StoryGeneratingDialog.show();
+  void onGenerateStory() {
+    if (isCompleted) StoryGeneratingDialog.show();
+  }
   void onManageDayPhotos(TrackingDay day) {
     if (tripId == null) return;
     Get.toNamed(

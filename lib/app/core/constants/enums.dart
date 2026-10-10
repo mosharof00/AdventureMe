@@ -68,6 +68,17 @@ enum IntentionType {
   }
 }
 
+/// How a trip memory was captured (`source`).
+enum MemorySource {
+  quickNote('QUICK_NOTE', 'Quick Note'),
+  voice('VOICE', 'Voice');
+
+  const MemorySource(this.apiValue, this.label);
+
+  final String apiValue;
+  final String label;
+}
+
 /// Fixed photo categories of a trip day (`category`).
 enum PhotoCategory {
   favoriteImage(
