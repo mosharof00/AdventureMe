@@ -7,6 +7,7 @@ import 'package:adventureme/app/global/widgets/custom_appbar.dart';
 import 'package:adventureme/app/global/widgets/global_loading.dart';
 
 import '../controllers/view_itinerary_map_controller.dart';
+import '../widgets/map_bottom_panel.dart';
 
 class ViewItineraryMapView extends GetView<ViewItineraryMapController> {
   const ViewItineraryMapView({super.key});
@@ -23,35 +24,55 @@ class ViewItineraryMapView extends GetView<ViewItineraryMapController> {
       // Map lives in a bounded body (not a full-bleed Stack background) so the
       // iOS platform view is created against a correct frame — otherwise it
       // renders black below the fold.
-      body: Obx(
-        () => controller.mapReady.value
-            ? Stack(
-                children: [
-                  SizedBox.expand(
-                    child: GoogleMap(
-                      initialCameraPosition: controller.initialCamera,
-                      markers: controller.markers.toSet(),
-                      polylines: controller.polylines.toSet(),
-                      onMapCreated: controller.onMapCreated,
-                      myLocationEnabled: controller.myLocationEnabled,
-                      myLocationButtonEnabled: false,
-                      zoomControlsEnabled: false,
-                      mapToolbarEnabled: false,
-                      compassEnabled: false,
-                    ),
+      body: Obx(() {
+        if (!controller.mapReady.value) return const GlobalLoading();
+        return Stack(
+          children: [
+            SizedBox.expand(
+              child: Listener(
+                onPointerDown: (_) => controller.collapsePanel(),
+                child: Obx(
+                  () => GoogleMap(
+                    initialCameraPosition: controller.initialCamera,
+                    markers: controller.markers.toSet(),
+                    polylines: controller.polylines.toSet(),
+                    padding: controller.mapPadding,
+                    onMapCreated: controller.onMapCreated,
+                    myLocationEnabled: controller.myLocationEnabled,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
+                    compassEnabled: false,
                   ),
-                  Positioned(
-                    right: 16.w,
-                    bottom: 24.h,
-                    child: _CircleButton(
-                      icon: Icons.my_location_rounded,
-                      onTap: controller.goToMyLocation,
-                    ),
-                  ),
-                ],
-              )
-            : const GlobalLoading(),
-      ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16.h,
+              right: 16.w,
+              child: _CircleButton(
+                icon: Icons.my_location_rounded,
+                onTap: controller.goToMyLocation,
+              ),
+            ),
+            if (controller.hasError.value)
+              Positioned(
+                top: 16.h,
+                left: 16.w,
+                child: _CircleButton(
+                  icon: Icons.refresh_rounded,
+                  onTap: controller.loadMap,
+                ),
+              ),
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: SafeArea(top: false, child: MapBottomPanel()),
+            ),
+          ],
+        );
+      }),
     );
   }
 }

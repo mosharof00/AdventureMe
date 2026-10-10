@@ -45,12 +45,14 @@ class TrackingDay {
     this.dayNumber = 0,
     required this.dayLabel,
     required this.date,
+    this.dateValue,
     required this.checkpoints,
   });
 
   final int dayNumber;
   final String dayLabel;
   final String date;
+  final DateTime? dateValue;
   final List<TripCheckpoint> checkpoints;
 }
 
@@ -126,6 +128,7 @@ class ItineraryDetailsController extends GetxController {
           dayNumber: interval.dayNumber ?? 0,
           dayLabel: 'Day ${interval.dayNumber ?? '-'}',
           date: interval.date == null ? '--' : _dayDate.format(interval.date!),
+          dateValue: interval.date,
           checkpoints: const [],
         ),
     ]);
@@ -442,7 +445,12 @@ class ItineraryDetailsController extends GetxController {
 
   void onViewMap() => Get.toNamed(
     Routes.VIEW_ITINERARY_MAP,
-    arguments: {'days': days.toList(), 'title': tripTitle},
+    arguments: {
+      'tripId': tripId,
+      'title': tripTitle,
+      'days': days.toList(),
+      'canMarkCheckpoint': isOngoing || isCompleted,
+    },
   );
   void onGenerateStory() {
     if (isCompleted) StoryGeneratingDialog.show();

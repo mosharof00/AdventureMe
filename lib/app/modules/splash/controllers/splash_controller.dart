@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/services/local_store_service.dart';
-import '../../../core/services/map_service.dart';
+import '../../../core/services/permission_service.dart';
 import '../../../core/utils/helper_utils.dart';
 import '../../../routes/app_pages.dart';
 
@@ -11,7 +11,7 @@ class SplashController extends GetxController {
 
     // Ask for location up-front (nice rationale dialog + OS prompt) so map
     // screens later open instantly with permission already resolved.
-    await Get.find<MapService>().requestLocationOnStartup();
+    await Get.find<PermissionService>().requestLocationOnStartup();
 
     navigateToScreen();
   }

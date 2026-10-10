@@ -60,6 +60,9 @@ class ApiEndpoint {
       '$trips/$tripId/thumbnail'; // post (multipart)
   static String tripMemories(String tripId) =>
       '$trips/$tripId/memories'; // post (multipart)
+  static String tripMap(String tripId) => '$trips/$tripId/map'; // get
+  static String dayCheckpoints(String tripId, int day) =>
+      '$trips/$tripId/days/$day/checkpoints'; // post
 
   /// user profile
   static const String profileDetails = '$baseUrl/profile/details'; // get

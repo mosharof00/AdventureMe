@@ -7,6 +7,7 @@ import 'package:adventureme/app/core/network/api_endpoints.dart';
 import 'package:adventureme/app/core/constants/enums.dart';
 import 'package:adventureme/app/data/models/trip_models/day_photos_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_map_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_memory_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
 
@@ -86,6 +87,19 @@ abstract class ITripRepository {
     required MemorySource source,
     String? text,
     File? voice,
+  });
+
+  Future<TripMapResponse> getTripMap(String tripId);
+
+  Future<CheckpointResponse> addCheckpoint({
+    required String tripId,
+    required int day,
+    required String title,
+    required String address,
+    required double lat,
+    required double lng,
+    required DateTime enteredAt,
+    required DateTime exitedAt,
   });
 }
 
@@ -341,6 +355,43 @@ class TripRepository implements ITripRepository {
       () => _client.dio.post(ApiEndpoint.tripMemories(tripId), data: formData),
       (dynamic data) => TripMemoryResponse.fromJson(data),
       'Add Trip Memory',
+    );
+  }
+
+  @override
+  Future<TripMapResponse> getTripMap(String tripId) {
+    return _client.handleRequest(
+      () => _client.dio.get(ApiEndpoint.tripMap(tripId)),
+      (dynamic data) => TripMapResponse.fromJson(data),
+      'Get Trip Map',
+    );
+  }
+
+  @override
+  Future<CheckpointResponse> addCheckpoint({
+    required String tripId,
+    required int day,
+    required String title,
+    required String address,
+    required double lat,
+    required double lng,
+    required DateTime enteredAt,
+    required DateTime exitedAt,
+  }) {
+    return _client.handleRequest(
+      () => _client.dio.post(
+        ApiEndpoint.dayCheckpoints(tripId, day),
+        data: {
+          'title': title,
+          'address': address,
+          'lat': lat,
+          'lng': lng,
+          'entered_at': enteredAt.toUtc().toIso8601String(),
+          'exited_at': exitedAt.toUtc().toIso8601String(),
+        },
+      ),
+      (dynamic data) => CheckpointResponse.fromJson(data),
+      'Add Checkpoint',
     );
   }
 
