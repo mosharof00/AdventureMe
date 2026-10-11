@@ -43,6 +43,9 @@ class ViewItineraryMapView extends GetView<ViewItineraryMapController> {
                     zoomControlsEnabled: false,
                     mapToolbarEnabled: false,
                     compassEnabled: false,
+                    buildingsEnabled: false,
+                    indoorViewEnabled: false,
+                    tiltGesturesEnabled: false,
                   ),
                 ),
               ),
@@ -55,15 +58,18 @@ class ViewItineraryMapView extends GetView<ViewItineraryMapController> {
                 onTap: controller.goToMyLocation,
               ),
             ),
-            if (controller.hasError.value)
-              Positioned(
-                top: 16.h,
-                left: 16.w,
-                child: _CircleButton(
-                  icon: Icons.refresh_rounded,
-                  onTap: controller.loadMap,
-                ),
+            Positioned(
+              top: 16.h,
+              left: 16.w,
+              child: Obx(
+                () => controller.hasError.value
+                    ? _CircleButton(
+                        icon: Icons.refresh_rounded,
+                        onTap: controller.loadMap,
+                      )
+                    : const SizedBox.shrink(),
               ),
+            ),
             const Positioned(
               left: 0,
               right: 0,

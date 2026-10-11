@@ -10,6 +10,7 @@ import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_map_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_memory_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_prompt_model.dart';
 
 abstract class ITripRepository {
   /// Cursor-paginated; pass the previous page's cursor to get the next page.
@@ -100,6 +101,17 @@ abstract class ITripRepository {
     required double lng,
     required DateTime enteredAt,
     required DateTime exitedAt,
+  });
+
+  /// [timezone] is an IANA name, e.g. `Asia/Dhaka`.
+  Future<PromptBatchResponse> getPromptBatch(String tripId, String timezone);
+
+  /// [answers] maps prompt id → text. With [skipRemaining], prompts left out
+  /// of [answers] are marked skipped.
+  Future<PromptAnswerResponse> answerPromptBatch(
+    String tripId,
+    Map<String, String> answers, {
+    bool skipRemaining = true,
   });
 }
 
@@ -392,6 +404,40 @@ class TripRepository implements ITripRepository {
       ),
       (dynamic data) => CheckpointResponse.fromJson(data),
       'Add Checkpoint',
+    );
+  }
+
+  @override
+  Future<PromptBatchResponse> getPromptBatch(String tripId, String timezone) {
+    return _client.handleRequest(
+      () => _client.dio.get(
+        ApiEndpoint.promptBatch(tripId),
+        queryParameters: {'timezone': timezone},
+      ),
+      (dynamic data) => PromptBatchResponse.fromJson(data),
+      'Get Prompt Batch',
+    );
+  }
+
+  @override
+  Future<PromptAnswerResponse> answerPromptBatch(
+    String tripId,
+    Map<String, String> answers, {
+    bool skipRemaining = true,
+  }) {
+    return _client.handleRequest(
+      () => _client.dio.post(
+        ApiEndpoint.answerPromptBatch(tripId),
+        data: {
+          'answers': [
+            for (final entry in answers.entries)
+              {'prompt_id': entry.key, 'text': entry.value},
+          ],
+          'skip_remaining': skipRemaining,
+        },
+      ),
+      (dynamic data) => PromptAnswerResponse.fromJson(data),
+      'Answer Prompt Batch',
     );
   }
 

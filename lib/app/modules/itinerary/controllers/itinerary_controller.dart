@@ -211,8 +211,6 @@ class ItineraryController extends GetxController
       'Starting: ${starting ?? '--'} | Destined: ${destined ?? '--'}';
 
   // ── Actions ──────────────────────────────────────────
-  void onStartTracking(TripListItem trip) {}
-  void onTrackLive(TripListItem trip) {}
   void onViewDetails(TripListItem trip) =>
       Get.toNamed(Routes.ITINERARY_DETAILS, arguments: trip);
   void onShare(TripListItem trip) {}

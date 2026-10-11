@@ -50,10 +50,10 @@ class MyApp extends StatelessWidget {
         title: AppConfig.appName,
         debugShowCheckedModeBanner: false,
 
-        // Add these — was completely missing
+        // The design is light-only; following the system dark mode turned
+        // backgrounds black and input text white-on-white.
         theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.light,
 
         initialRoute: AppPages.INITIAL,
         getPages: AppPages.routes,

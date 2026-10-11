@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/core/theme/app_gradient.dart';
 import 'package:adventureme/app/global/widgets/custom_appbar.dart';
 
@@ -40,7 +39,6 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasAppBar = appBar != null || appbarTitle != null;
 
     return Scaffold(
@@ -66,8 +64,7 @@ class AppScaffold extends StatelessWidget {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          gradient: isDark ? null : (gradient ?? AppGradient.appBgGradient),
-          color: isDark ? AppColor.darkBackground : null,
+          gradient: gradient ?? AppGradient.appBgGradient,
         ),
         child: SafeArea(child: body),
       ),

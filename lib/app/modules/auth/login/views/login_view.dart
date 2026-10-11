@@ -5,7 +5,9 @@ import 'package:get/get.dart';
 import 'package:adventureme/app/core/extensions/sizedbox_extension.dart';
 import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
+import 'package:adventureme/app/core/theme/app_gradient.dart';
 import 'package:adventureme/app/global/widgets/app_input_text_form_field.dart';
+import 'package:adventureme/app/global/widgets/app_scaffold.dart';
 import 'package:adventureme/app/global/widgets/app_text.dart';
 import 'package:adventureme/app/global/widgets/custom_check_box.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
@@ -19,78 +21,59 @@ class LoginView extends GetView<LoginController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColor.bgGradient2,
-              AppColor.bgGradient1,
-              AppColor.bgGradient3,
-            ],
-            stops: [0.0, 0.45, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Form(
-              key: controller.formKey,
-              child: Column(
-                children: [
-                  80.height,
-                  AppText(
-                    'Welcome Back!',
-                    style: context.headlineMedium.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF2D2D2D),
-                    ),
-                  ),
-                  8.height,
-                  AppText(
-                    'Automatically or manually log where you go',
-                    style: context.bodyMedium.copyWith(
-                      color: AppColor.hintText,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  40.height,
-                  AppInputTextFormField(
-                    label: 'Email',
-                    hintText: 'example@gmail.com',
-                    controller: controller.emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: controller.validateEmail,
-                  ),
-                  16.height,
-                  PasswordInputField(
-                    label: 'Password',
-                    hintText: 'Enter password',
-                    controller: controller.passwordController,
-                    validator: controller.validatePassword,
-                  ),
-                  16.height,
-                  const _RememberForgotRow(),
-                  32.height,
-                  Obx(
-                    () => GlobalButton(
-                      text: 'Login',
-                      onTap: controller.onLogin,
-                      widget: controller.isLoading.value
-                          ? GlobalLoading(size: 24.sp, color: AppColor.white)
-                          : null,
-                    ),
-                  ),
-                  28.height,
-                  const _SignUpFooter(),
-                  24.height,
-                ],
+    return AppScaffold(
+      gradient: AppGradient.authBgGradient,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: Form(
+          key: controller.formKey,
+          child: Column(
+            children: [
+              80.height,
+              AppText(
+                'Welcome Back!',
+                style: context.headlineMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF2D2D2D),
+                ),
               ),
-            ),
+              8.height,
+              AppText(
+                'Automatically or manually log where you go',
+                style: context.bodyMedium.copyWith(color: AppColor.hintText),
+                textAlign: TextAlign.center,
+              ),
+              40.height,
+              AppInputTextFormField(
+                label: 'Email',
+                hintText: 'example@gmail.com',
+                controller: controller.emailController,
+                keyboardType: TextInputType.emailAddress,
+                validator: controller.validateEmail,
+              ),
+              16.height,
+              PasswordInputField(
+                label: 'Password',
+                hintText: 'Enter password',
+                controller: controller.passwordController,
+                validator: controller.validatePassword,
+              ),
+              16.height,
+              const _RememberForgotRow(),
+              32.height,
+              Obx(
+                () => GlobalButton(
+                  text: 'Login',
+                  onTap: controller.onLogin,
+                  widget: controller.isLoading.value
+                      ? GlobalLoading(size: 24.sp, color: AppColor.white)
+                      : null,
+                ),
+              ),
+              28.height,
+              const _SignUpFooter(),
+              24.height,
+            ],
           ),
         ),
       ),
@@ -116,7 +99,7 @@ class _RememberForgotRow extends GetView<LoginController> {
         AppText('Remember Me', style: context.bodyMedium),
         const Spacer(),
         GestureDetector(
-          onTap: (){
+          onTap: () {
             Get.toNamed(Routes.FORGOT_PASSWORD);
           },
           child: AppText(

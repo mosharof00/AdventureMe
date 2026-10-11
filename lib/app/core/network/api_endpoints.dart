@@ -61,6 +61,10 @@ class ApiEndpoint {
   static String tripMemories(String tripId) =>
       '$trips/$tripId/memories'; // post (multipart)
   static String tripMap(String tripId) => '$trips/$tripId/map'; // get
+  static String promptBatch(String tripId) =>
+      '$trips/$tripId/prompts/current-batch'; // get (?timezone=)
+  static String answerPromptBatch(String tripId) =>
+      '$trips/$tripId/prompts/batch/answer'; // post
   static String dayCheckpoints(String tripId, int day) =>
       '$trips/$tripId/days/$day/checkpoints'; // post
 

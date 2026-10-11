@@ -6,7 +6,9 @@ import 'package:adventureme/app/core/extensions/sizedbox_extension.dart';
 import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/core/utils/validators.dart';
+import 'package:adventureme/app/core/theme/app_gradient.dart';
 import 'package:adventureme/app/global/widgets/app_input_text_form_field.dart';
+import 'package:adventureme/app/global/widgets/app_scaffold.dart';
 import 'package:adventureme/app/global/widgets/app_text.dart';
 import 'package:adventureme/app/global/widgets/custom_check_box.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
@@ -20,87 +22,70 @@ class RegisterView extends GetView<RegisterController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColor.bgGradient2,
-              AppColor.bgGradient1,
-              AppColor.bgGradient3,
-            ],
-            stops: [0.0, 0.45, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Form(
-              key: controller.formKey,
-              child: Column(
-                children: [
-                  24.height,
-                  Assets.logos.appLogo.image(width: 120.w, height: 120.w),
-                  16.height,
-                  AppText(
-                    'Welcome Back!',
-                    style: context.headlineMedium.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF2D2D2D),
-                    ),
-                  ),
-                  28.height,
-                  AppInputTextFormField(
-                    label: 'Full Name',
-                    hintText: 'you name',
-                    controller: controller.fullNameController,
-                    keyboardType: TextInputType.name,
-                    validator: Validators.name,
-                  ),
-                  16.height,
-                  AppInputTextFormField(
-                    label: 'Email',
-                    hintText: 'example@gmail.com',
-                    controller: controller.emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: Validators.email,
-                  ),
-                  16.height,
-                  PasswordInputField(
-                    label: 'Password',
-                    hintText: 'Password',
-                    controller: controller.passwordController,
-                    validator: Validators.strongPassword,
-                  ),
-                  16.height,
-                  PasswordInputField(
-                    label: 'Confirm Password',
-                    hintText: 'Password',
-                    controller: controller.confirmPasswordController,
-                    validator: controller.validateConfirmPassword,
-                  ),
-                  16.height,
-                  const _TermsRow(),
-                  28.height,
-                  Obx(
-                    () => GlobalButton(
-                      text: 'Sign Up',
-                      onTap: controller.onSignUp,
-                      widget: controller.isLoading.value
-                          ? GlobalLoading(size: 24.sp, color: AppColor.white)
-                          : null,
-                    ),
-                  ),
-                  24.height,
-                  const _LoginFooter(),
-                  24.height,
-                ],
+    return AppScaffold(
+      gradient: AppGradient.authBgGradient,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: Form(
+          key: controller.formKey,
+          child: Column(
+            children: [
+              24.height,
+              Assets.logos.appLogo.image(width: 120.w, height: 120.w),
+              16.height,
+              AppText(
+                'Welcome Back!',
+                style: context.headlineMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF2D2D2D),
+                ),
               ),
-            ),
+              28.height,
+              AppInputTextFormField(
+                label: 'Full Name',
+                hintText: 'you name',
+                controller: controller.fullNameController,
+                keyboardType: TextInputType.name,
+                validator: Validators.name,
+              ),
+              16.height,
+              AppInputTextFormField(
+                label: 'Email',
+                hintText: 'example@gmail.com',
+                controller: controller.emailController,
+                keyboardType: TextInputType.emailAddress,
+                validator: Validators.email,
+              ),
+              16.height,
+              PasswordInputField(
+                label: 'Password',
+                hintText: 'Password',
+                controller: controller.passwordController,
+                validator: Validators.strongPassword,
+              ),
+              16.height,
+              PasswordInputField(
+                label: 'Confirm Password',
+                hintText: 'Password',
+                controller: controller.confirmPasswordController,
+                validator: controller.validateConfirmPassword,
+              ),
+              16.height,
+              const _TermsRow(),
+              28.height,
+              Obx(
+                () => GlobalButton(
+                  text: 'Sign Up',
+                  onTap: controller.onSignUp,
+                  widget: controller.isLoading.value
+                      ? GlobalLoading(size: 24.sp, color: AppColor.white)
+                      : null,
+                ),
+              ),
+              24.height,
+              const _LoginFooter(),
+              24.height,
+            ],
           ),
         ),
       ),

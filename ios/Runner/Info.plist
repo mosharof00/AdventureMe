@@ -18,6 +18,8 @@
         <true/>
         <key>CFBundleDevelopmentRegion</key>
         <string>$(DEVELOPMENT_LANGUAGE)</string>
+        <key>UIUserInterfaceStyle</key>
+        <string>Light</string>
         <key>CFBundleDisplayName</key>
         <string>AdventuresMe</string>
         <key>CFBundleExecutable</key>

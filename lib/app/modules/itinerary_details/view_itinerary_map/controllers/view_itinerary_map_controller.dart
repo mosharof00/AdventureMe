@@ -12,14 +12,10 @@ import 'package:adventureme/app/data/models/trip_models/trip_map_model.dart';
 import 'package:adventureme/app/data/repositories/trip_repository.dart';
 import 'package:adventureme/app/global/widgets/global_snackbar.dart';
 import 'package:adventureme/app/modules/itinerary_details/controllers/itinerary_details_controller.dart';
-import 'package:adventureme/app/modules/itinerary_details/view_itinerary_map/trip_map_demo.dart';
 import 'package:adventureme/app/modules/itinerary_details/view_itinerary_map/widgets/mark_checkpoint_dialog.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
 
 class ViewItineraryMapController extends GetxController {
-  /// Switch to `false` once `GET /trips/{id}/map` is live.
-  static const useDemoData = true;
-
   final MapService _mapService = Get.find<MapService>();
   final PermissionService _permissions = Get.find<PermissionService>();
   final ITripRepository _tripRepository = Get.find<ITripRepository>();
@@ -45,6 +41,10 @@ class ViewItineraryMapController extends GetxController {
   bool myLocationEnabled = false;
 
   final _icons = <String, BitmapDescriptor>{};
+  GeoBounds? _tripBounds;
+
+  /// Camera start when the trip has no checkpoints yet.
+  LatLng? _userTarget;
 
   static final _time = DateFormat('h:mm a');
   static final _dayDate = DateFormat('MMM d, yyyy');
@@ -66,6 +66,12 @@ class ViewItineraryMapController extends GetxController {
   Future<void> _init() async {
     myLocationEnabled = await _permissions.hasLocation();
     await loadMap();
+    if (myLocationEnabled && totalCheckpoints == 0) {
+      final position = await _permissions.currentPosition(showDialogs: false);
+      if (position != null) {
+        _userTarget = LatLng(position.latitude, position.longitude);
+      }
+    }
     mapReady.value = true;
   }
 
@@ -75,11 +81,7 @@ class ViewItineraryMapController extends GetxController {
     if (id == null) return;
     try {
       hasError.value = false;
-      final response = useDemoData
-          ? TripMapDemo.build([
-              for (final d in _tripDays) (d.dayNumber, d.dateValue),
-            ])
-          : await _tripRepository.getTripMap(id);
+      final response = await _tripRepository.getTripMap(id);
       if (response.success != true) {
         hasError.value = true;
         globalSnackBar(
@@ -88,6 +90,7 @@ class ViewItineraryMapController extends GetxController {
         );
         return;
       }
+      _tripBounds = response.bounds;
       days.assignAll(response.days);
       if (isSingleDay) selectedDay.value = days.first.dayNumber;
       await _render();
@@ -142,10 +145,13 @@ class ViewItineraryMapController extends GetxController {
   }
 
   // ── Map overlays ─────────────────────────────────────
+  /// Decoded routes, keyed by the encoded string (decoding is the costly part).
+  final _decodedRoutes = <String, List<LatLng>>{};
+
   List<LatLng> _path(TripMapDay day) {
     final encoded = day.routePolyline;
     if (encoded != null && encoded.isNotEmpty) {
-      return _mapService.decodePolyline(encoded);
+      return _decodedRoutes[encoded] ??= _mapService.decodePolyline(encoded);
     }
     return [for (final c in day.checkpoints) LatLng(c.lat, c.lng)];
   }
@@ -155,7 +161,10 @@ class ViewItineraryMapController extends GetxController {
     Future<BitmapDescriptor> Function() build,
   ) async => _icons[key] ??= await build();
 
+  int _renderId = 0;
+
   Future<void> _render() async {
+    final renderId = ++_renderId;
     final selected = selectedDay.value;
     final newPolylines = <Polyline>{};
     final newMarkers = <Marker>{};
@@ -164,13 +173,14 @@ class ViewItineraryMapController extends GetxController {
     for (var i = 0; i < daysWithData.length - 1; i++) {
       final from = daysWithData[i].checkpoints.last;
       final to = daysWithData[i + 1].checkpoints.first;
+      // Solid on purpose: dash patterns make the iOS Maps SDK build every
+      // dash per zoom level, which exceeds the memory limit on long links.
       newPolylines.add(
         Polyline(
           polylineId: PolylineId('link_$i'),
           points: [LatLng(from.lat, from.lng), LatLng(to.lat, to.lng)],
-          color: AppColor.primary.withValues(alpha: 0.7),
+          color: AppColor.secondary,
           width: 3,
-          patterns: [PatternItem.dash(18), PatternItem.gap(10)],
         ),
       );
     }
@@ -237,6 +247,8 @@ class ViewItineraryMapController extends GetxController {
       }
     }
 
+    // A newer selection started while icons were being drawn; drop this one.
+    if (renderId != _renderId || isClosed) return;
     polylines.assignAll(newPolylines);
     markers.assignAll(newMarkers);
   }
@@ -265,7 +277,10 @@ class ViewItineraryMapController extends GetxController {
         .expand((d) => d.checkpoints)
         .map((c) => LatLng(c.lat, c.lng))
         .firstOrNull;
-    return CameraPosition(target: first ?? _fallbackTarget, zoom: 11);
+    return CameraPosition(
+      target: first ?? _userTarget ?? _fallbackTarget,
+      zoom: first == null && _userTarget != null ? 14 : 11,
+    );
   }
 
   void onMapCreated(GoogleMapController controller) {
@@ -283,7 +298,7 @@ class ViewItineraryMapController extends GetxController {
     ];
     if (points.isEmpty) return;
 
-    final bounds = day?.bounds;
+    final bounds = day == null ? _tripBounds : day.bounds;
     final update = points.length == 1
         ? CameraUpdate.newLatLngZoom(points.first, 14)
         : CameraUpdate.newLatLngBounds(
@@ -368,6 +383,7 @@ class ViewItineraryMapController extends GetxController {
       }
       final index = days.indexWhere((d) => d.dayNumber == day);
       if (index != -1) days[index] = days[index].withCheckpoint(checkpoint);
+      _tripBounds = null;
       await _render();
       _fitCamera();
       _checkpointMessage = response.message;

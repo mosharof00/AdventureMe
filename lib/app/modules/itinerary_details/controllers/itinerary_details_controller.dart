@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:adventureme/app/core/constants/enums.dart';
 import 'package:adventureme/app/core/network/handle_exceptions.dart';
+import 'package:adventureme/app/core/services/trip_prompt_service.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
@@ -103,7 +104,7 @@ class ItineraryDetailsController extends GetxController {
       final data = response.data;
       if (response.success == true && data != null) {
         _applyTrip(data);
-        _askIntentionIfMissing(data);
+        _askIntentionIfMissing(data).then((_) => _askDailyPrompts(data));
       } else {
         hasError.value = trip.value == null;
         globalSnackBar(
@@ -236,6 +237,13 @@ class ItineraryDetailsController extends GetxController {
   }
 
   String? _intentionMessage;
+
+  // ── Daily prompts ────────────────────────────────────
+  void _askDailyPrompts(TripData data) {
+    final id = tripId;
+    if (isClosed || id == null || data.tripStatus != TripStatus.active) return;
+    Get.find<TripPromptService>().askIfPending(id);
+  }
 
   /// Called by [TripIntentionDialog]; returns whether it was saved.
   Future<bool> saveIntention(
