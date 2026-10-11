@@ -5,7 +5,9 @@ class AppConfig {
   static String appLogo = "assets/logos/app_icon.png";
   static String splashLogo = "assets/logos/app_logo.png";
   static String appName = "AdventuresMe";
-  static const domainUrl = "https://principal-copyrighted-tommy-quite.trycloudflare.com";
+  static const domainUrl =
+  // "https://api.adventuresme.com";
+      "https://los-regularly-surrounded-whether.trycloudflare.com";
 
   /// ProjectID
 

@@ -40,7 +40,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = dotenv["GOOGLE_MAPS_API_KEY"] ?: ""
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = dotenv["GOOGLE_MAPS_ANDROID_API_KEY"] ?: ""
     }
 
     buildTypes {

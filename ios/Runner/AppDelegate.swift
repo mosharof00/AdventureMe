@@ -11,7 +11,7 @@ import GoogleMaps
     if let apiKey = Self.googleMapsApiKey(), !apiKey.isEmpty {
       GMSServices.provideAPIKey(apiKey)
     } else {
-      NSLog("[AppDelegate] ⚠️ GOOGLE_MAPS_API_KEY not found in .env — maps will crash.")
+      NSLog("[AppDelegate] ⚠️ GOOGLE_MAPS_IOS_API_KEY not found in .env — maps will crash.")
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
@@ -20,7 +20,7 @@ import GoogleMaps
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
   }
 
-  /// Reads GOOGLE_MAPS_API_KEY from the `.env` file bundled via flutter_dotenv
+  /// Reads GOOGLE_MAPS_IOS_API_KEY from the `.env` file bundled via flutter_dotenv
   /// so the native Maps SDK and the Dart side share a single source of truth.
   private static func googleMapsApiKey() -> String? {
     guard let contents = loadDotEnvContents() else { return nil }
@@ -32,7 +32,7 @@ import GoogleMaps
       else { continue }
 
       let key = line[..<separatorIndex].trimmingCharacters(in: .whitespaces)
-      if key == "GOOGLE_MAPS_API_KEY" {
+      if key == "GOOGLE_MAPS_IOS_API_KEY" {
         return line[line.index(after: separatorIndex)...].trimmingCharacters(in: .whitespaces)
       }
     }

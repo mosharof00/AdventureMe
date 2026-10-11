@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -10,8 +11,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 /// Google-Maps helpers shared by the map screens. Permissions live in
 /// `PermissionService`.
 class MapService extends GetxService {
-  /// Google Maps API key sourced from the `.env` file (loaded via dotenv).
-  String get apiKey => dotenv.env['GOOGLE_MAPS_API_KEY']?.trim() ?? '';
+  /// This platform's Google Maps API key from the `.env` file.
+  String get apiKey =>
+      dotenv
+          .env[Platform.isIOS
+              ? 'GOOGLE_MAPS_IOS_API_KEY'
+              : 'GOOGLE_MAPS_ANDROID_API_KEY']
+          ?.trim() ??
+      '';
 
   bool get hasApiKey => apiKey.isNotEmpty;
 
