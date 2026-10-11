@@ -15,6 +15,7 @@ import 'package:adventureme/app/global/widgets/app_text.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
 import 'package:adventureme/app/global/widgets/global_loading.dart';
 import 'package:adventureme/app/global/widgets/global_snackbar.dart';
+import 'package:adventureme/app/global/widgets/voice_player.dart';
 
 import '../controllers/itinerary_details_controller.dart';
 
@@ -46,6 +47,10 @@ class _AddMemoryDialogState extends State<AddMemoryDialog> {
   File? _voice;
   Duration _recorded = Duration.zero;
   Timer? _ticker;
+
+  /// 0–1 loudness samples taken while recording, drawn as the waveform.
+  final _levels = <double>[];
+  StreamSubscription<Amplitude>? _amplitudeSub;
 
   bool _submitted = false;
   bool _saving = false;
@@ -81,14 +86,24 @@ class _AddMemoryDialogState extends State<AddMemoryDialog> {
     setState(() {
       _isRecording = true;
       _recorded = Duration.zero;
+      _levels.clear();
     });
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _recorded += const Duration(seconds: 1));
     });
+    _amplitudeSub = _recorder
+        .onAmplitudeChanged(const Duration(milliseconds: 100))
+        .listen((amp) {
+          // dBFS: about -50 is silence, 0 is the loudest.
+          final level = ((amp.current + 50) / 50).clamp(0.08, 1.0);
+          if (mounted) setState(() => _levels.add(level));
+        });
   }
 
   Future<void> _stopRecording() async {
     _ticker?.cancel();
+    await _amplitudeSub?.cancel();
+    _amplitudeSub = null;
     final path = await _recorder.stop();
     if (!mounted) return;
     setState(() {
@@ -102,6 +117,7 @@ class _AddMemoryDialogState extends State<AddMemoryDialog> {
     setState(() {
       _voice = null;
       _recorded = Duration.zero;
+      _levels.clear();
     });
   }
 
@@ -142,6 +158,7 @@ class _AddMemoryDialogState extends State<AddMemoryDialog> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _amplitudeSub?.cancel();
     _recorder.dispose();
     _deleteFile(_voice);
     _noteController.dispose();
@@ -344,81 +361,112 @@ class _AddMemoryDialogState extends State<AddMemoryDialog> {
   }
 
   Widget _voiceRecorder(BuildContext context) {
-    final hasVoice = _voice != null && !_isRecording;
-    final status = _isRecording
-        ? 'Recording…'
-        : hasVoice
-        ? 'Voice recorded'
-        : 'Tap the mic to start recording';
-
+    final voice = _voice;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: AppColor.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(14.r),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: _saving
-                ? null
-                : _isRecording
-                ? _stopRecording
-                : _startRecording,
-            child: Container(
-              width: 52.r,
-              height: 52.r,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _isRecording ? AppColor.error : AppColor.primary,
-              ),
-              child: Icon(
-                _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
-                color: AppColor.white,
-                size: 26.sp,
-              ),
+      child: voice != null && !_isRecording
+          ? Row(
+              children: [
+                Expanded(
+                  child: VoicePlayer(
+                    key: ValueKey(voice.path),
+                    path: voice.path,
+                    levels: List.of(_levels),
+                    initialDuration: _recorded,
+                    enabled: !_saving,
+                  ),
+                ),
+                IconButton(
+                  onPressed: _saving ? null : _discardVoice,
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColor.error,
+                    size: 22.sp,
+                  ),
+                ),
+              ],
+            )
+          : _recordingRow(context),
+    );
+  }
+
+  /// Mic button before recording; stop button with live bars while recording.
+  Widget _recordingRow(BuildContext context) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: _saving
+              ? null
+              : _isRecording
+              ? _stopRecording
+              : _startRecording,
+          child: Container(
+            width: 52.r,
+            height: 52.r,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _isRecording ? AppColor.error : AppColor.primary,
+            ),
+            child: Icon(
+              _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+              color: AppColor.white,
+              size: 26.sp,
             ),
           ),
-          14.width,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+        ),
+        12.width,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_isRecording)
+                SizedBox(
+                  height: 32.h,
+                  width: double.infinity,
+                  child: CustomPaint(
+                    painter: VoiceWaveformPainter(
+                      levels: _liveLevels,
+                      progress: 1,
+                      playedColor: AppColor.error,
+                    ),
+                  ),
+                )
+              else
                 AppText(
-                  status,
+                  'Tap the mic to start recording',
                   style: context.titleSmall.copyWith(
                     color: const Color(0xFF2D2D2D),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                4.height,
-                AppText(
-                  _format(_recorded),
-                  style: context.bodyMedium.copyWith(
-                    color: _isRecording ? AppColor.error : AppColor.hintText,
-                  ),
+              4.height,
+              AppText(
+                _isRecording
+                    ? 'Recording  ${formatVoiceDuration(_recorded)}'
+                    : formatVoiceDuration(_recorded),
+                style: context.labelSmall.copyWith(
+                  color: _isRecording ? AppColor.error : AppColor.hintText,
                 ),
-              ],
-            ),
-          ),
-          if (hasVoice)
-            IconButton(
-              onPressed: _saving ? null : _discardVoice,
-              icon: Icon(
-                Icons.delete_outline_rounded,
-                color: AppColor.error,
-                size: 22.sp,
               ),
-            ),
-        ],
-      ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  String _format(Duration d) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(d.inMinutes)}:${two(d.inSeconds % 60)}';
+  /// The latest samples, padded on the left so new bars enter from the right.
+  List<double> get _liveLevels {
+    const count = 32;
+    final recent = _levels.length > count
+        ? _levels.sublist(_levels.length - count)
+        : _levels;
+    return [...List.filled(count - recent.length, 0.08), ...recent];
   }
 }
 

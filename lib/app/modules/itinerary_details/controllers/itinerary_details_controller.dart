@@ -10,6 +10,7 @@ import 'package:adventureme/app/core/network/handle_exceptions.dart';
 import 'package:adventureme/app/core/services/trip_prompt_service.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_map_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
 import 'package:adventureme/app/data/repositories/trip_repository.dart';
 import 'package:adventureme/app/global/widgets/app_bottom_sheet.dart';
@@ -20,25 +21,62 @@ import 'package:adventureme/app/modules/itinerary/controllers/itinerary_controll
 import 'package:adventureme/app/modules/itinerary_details/widgets/add_memory_dialog.dart';
 import 'package:adventureme/app/modules/itinerary_details/widgets/story_generating_dialog.dart';
 import 'package:adventureme/app/modules/itinerary_details/widgets/trip_intention_dialog.dart';
+import 'package:adventureme/app/modules/itinerary_details/widgets/trip_reflection_dialog.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
 import 'package:adventureme/gen/assets.gen.dart';
 
 class TripCheckpoint {
   const TripCheckpoint({
     required this.title,
+    this.address,
     required this.time,
-    required this.duration,
-    required this.label,
-    required this.quote,
-    required this.photos,
+    this.duration = '',
+    this.isCompleted = false,
+    this.quote = '',
+    this.photos = const [],
   });
 
   final String title;
+  final String? address;
   final String time;
   final String duration;
-  final String label;
+  final bool isCompleted;
   final String quote;
   final List<String> photos;
+
+  static final _time = DateFormat('h:mm a');
+
+  factory TripCheckpoint.from(Checkpoint c) {
+    final title = c.title?.trim() ?? '';
+    final address = c.address?.trim() ?? '';
+    final entered = c.enteredAt?.toLocal();
+    final exited = c.exitedAt?.toLocal();
+    final minutes =
+        c.durationMinutes ??
+        (entered != null && exited != null
+            ? exited.difference(entered).inMinutes
+            : null);
+    return TripCheckpoint(
+      title: title.isNotEmpty
+          ? title
+          : (address.isNotEmpty ? address : 'Checkpoint'),
+      address: title.isNotEmpty && address.isNotEmpty ? address : null,
+      time: entered == null
+          ? '--'
+          : exited == null
+          ? _time.format(entered)
+          : '${_time.format(entered)} - ${_time.format(exited)}',
+      duration: minutes == null || minutes <= 0 ? '' : _formatMinutes(minutes),
+      isCompleted: c.status == 'COMPLETED',
+    );
+  }
+
+  /// `30` → `30 min`, `90` → `1h 30m`, `120` → `2h`.
+  static String _formatMinutes(int minutes) {
+    if (minutes < 60) return '$minutes min';
+    final h = minutes ~/ 60, m = minutes % 60;
+    return m == 0 ? '${h}h' : '${h}h ${m}m';
+  }
 }
 
 class TrackingDay {
@@ -67,6 +105,7 @@ class ItineraryDetailsController extends GetxController {
   final isLoading = false.obs;
   final hasError = false.obs;
   final isStarting = false.obs;
+  final isEnding = false.obs;
   final isCancelling = false.obs;
 
   /// Shown while the details request is in flight.
@@ -104,7 +143,10 @@ class ItineraryDetailsController extends GetxController {
       final data = response.data;
       if (response.success == true && data != null) {
         _applyTrip(data);
-        _askIntentionIfMissing(data).then((_) => _askDailyPrompts(data));
+        _askIntentionIfMissing(data).then((_) {
+          _askDailyPrompts(data);
+          _askReflectionIfMissing(data);
+        });
       } else {
         hasError.value = trip.value == null;
         globalSnackBar(
@@ -130,7 +172,9 @@ class ItineraryDetailsController extends GetxController {
           dayLabel: 'Day ${interval.dayNumber ?? '-'}',
           date: interval.date == null ? '--' : _dayDate.format(interval.date!),
           dateValue: interval.date,
-          checkpoints: const [],
+          checkpoints: [
+            for (final c in interval.checkPoints) TripCheckpoint.from(c),
+          ],
         ),
     ]);
     _syncTimer();
@@ -167,10 +211,10 @@ class ItineraryDetailsController extends GetxController {
   /// Label of the photo button on a completed day card.
   String get photoActionLabel => isCompleted ? 'Edit Photos' : 'Upload Photos';
 
-  /// Days that already have tracked data (for the Photo Chapter tab).
+  /// Days with checkpoint photos (for the Photo Chapter tab).
   List<TrackingDay> get memoryDays => [
-    for (var i = 0; i < days.length; i++)
-      if (isDayDone(i)) days[i],
+    for (final day in days)
+      if (day.checkpoints.any((c) => c.photos.isNotEmpty)) day,
   ];
 
   // ── Timer ────────────────────────────────────────────
@@ -184,9 +228,8 @@ class ItineraryDetailsController extends GetxController {
     final data = trip.value;
     final started = data?.startedAt;
     if (data == null) return Duration.zero;
-    if (isCompleted && data.trackingDurationMinutes != null) {
-      return Duration(minutes: data.trackingDurationMinutes!);
-    }
+    final tracked = data.trackingDurationMinutes ?? 0;
+    if (isCompleted && tracked > 0) return Duration(minutes: tracked);
     if (started == null) return Duration.zero;
     final until = switch (status.value) {
       TripStatus.active => DateTime.now(),
@@ -210,7 +253,156 @@ class ItineraryDetailsController extends GetxController {
 
   // ── Actions ──────────────────────────────────────────
   void onStartOrEnd() {
-    if (isPending && trip.value != null && !isStarting.value) _confirmStart();
+    if (trip.value == null || isStarting.value || isEnding.value) return;
+    if (isPending) {
+      _confirmStart();
+    } else if (isOngoing) {
+      _confirmEnd();
+    }
+  }
+
+  void _confirmEnd() {
+    AppBottomSheet.show(
+      sticker: Assets.images.coolSticker.path,
+      title: 'End Your Adventure?',
+      description:
+          'Tracking stops once the trip ends. You can still add photos and create your story.',
+      actionWidget: Row(
+        children: [
+          Expanded(
+            child: GlobalButton(
+              text: 'Not Yet',
+              color: AppColor.primaryDisable,
+              textColor: AppColor.primary,
+              onTap: () {
+                if (!isEnding.value) Get.back();
+              },
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Obx(
+              () => GlobalButton(
+                text: 'End Trip',
+                onTap: _endTrip,
+                widget: isEnding.value
+                    ? GlobalLoading(size: 22.sp, color: AppColor.white)
+                    : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _endTrip() async {
+    final id = tripId;
+    if (id == null || isEnding.value) return;
+    String? message;
+    try {
+      isEnding.value = true;
+      final response = await _tripRepository.endTrip(id);
+      final data = response.data;
+      if (response.success != true || data == null) {
+        globalSnackBar(
+          title: 'Unable to End',
+          message: response.message ?? 'Unable to end the trip.',
+        );
+        return;
+      }
+
+      _closeSnackbars();
+      if (Get.isBottomSheetOpen == true) Get.back();
+      _applyTrip(
+        data.tripIntervals.isEmpty
+            ? data.copyWith(
+                tripIntervals: trip.value?.tripIntervals ?? const [],
+              )
+            : data,
+      );
+      if (Get.isRegistered<ItineraryController>()) {
+        Get.find<ItineraryController>().refreshAll();
+      }
+      message = response.message;
+    } catch (e) {
+      handleException(e, context: 'End Trip');
+      return;
+    } finally {
+      isEnding.value = false;
+    }
+
+    _reflectionAsked = true;
+    final reflected = await TripReflectionDialog.show(
+      intention: trip.value?.intention,
+    );
+    if (reflected) {
+      _showReflectionSaved();
+    } else {
+      globalSnackBar(
+        title: 'Trip Completed',
+        message: message ?? 'Your adventure is complete.',
+        backgroundColor: AppColor.primary,
+      );
+    }
+  }
+
+  // ── Reflection ───────────────────────────────────────
+  /// Asked at most once per visit, so a refresh doesn't re-open it.
+  bool _reflectionAsked = false;
+  String? _reflectionMessage;
+
+  Future<void> _askReflectionIfMissing(TripData data) async {
+    if (isClosed ||
+        _reflectionAsked ||
+        data.tripStatus != TripStatus.completed ||
+        data.hasReflection) {
+      return;
+    }
+    _reflectionAsked = true;
+    if (await TripReflectionDialog.show(intention: data.intention)) {
+      _showReflectionSaved();
+    }
+  }
+
+  /// Called by [TripReflectionDialog]; returns whether it was saved.
+  Future<bool> saveReflection(
+    String reflection,
+    DominantEmotion emotion,
+  ) async {
+    final id = tripId;
+    if (id == null) return false;
+    try {
+      final response = await _tripRepository.saveReflection(
+        tripId: id,
+        reflection: reflection,
+        emotion: emotion,
+      );
+      if (response.success != true) {
+        globalSnackBar(
+          title: 'Not Saved',
+          message: response.message ?? 'Unable to save your reflection.',
+        );
+        return false;
+      }
+      trip.value = trip.value?.copyWith(
+        reflectedAt: response.reflectedAt ?? DateTime.now(),
+      );
+      _reflectionMessage = response.message;
+      return true;
+    } catch (e) {
+      handleException(e, context: 'Save Trip Reflection');
+      return false;
+    }
+  }
+
+  void _showReflectionSaved() {
+    globalSnackBar(
+      title: 'Reflection Saved',
+      message:
+          _reflectionMessage ?? 'Thank you for sharing what stayed with you.',
+      backgroundColor: AppColor.primary,
+    );
   }
 
   // ── Intention ────────────────────────────────────────
@@ -218,7 +410,8 @@ class ItineraryDetailsController extends GetxController {
   bool _intentionAsked = false;
 
   Future<void> _askIntentionIfMissing(TripData data) async {
-    final needsIntention = data.tripStatus == TripStatus.pending ||
+    final needsIntention =
+        data.tripStatus == TripStatus.pending ||
         data.tripStatus == TripStatus.active;
     if (isClosed || _intentionAsked || !needsIntention || data.hasIntention) {
       return;
@@ -229,7 +422,8 @@ class ItineraryDetailsController extends GetxController {
     if (saved) {
       globalSnackBar(
         title: 'Intention Saved',
-        message: _intentionMessage ??
+        message:
+            _intentionMessage ??
             'Thank you. This will help us tell your story.',
         backgroundColor: AppColor.primary,
       );
@@ -405,7 +599,8 @@ class ItineraryDetailsController extends GetxController {
     if (numbers.isEmpty) return 1;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    for (final interval in trip.value?.tripIntervals ?? const <TripInterval>[]) {
+    for (final interval
+        in trip.value?.tripIntervals ?? const <TripInterval>[]) {
       final date = interval.date?.toLocal();
       if (date == null) continue;
       if (DateTime(date.year, date.month, date.day) == today) {
@@ -461,8 +656,10 @@ class ItineraryDetailsController extends GetxController {
     },
   );
   void onGenerateStory() {
-    if (isCompleted) StoryGeneratingDialog.show();
+    final id = tripId;
+    if (isCompleted && id != null) StoryGeneratingDialog.show(id);
   }
+
   void onManageDayPhotos(TrackingDay day) {
     if (tripId == null) return;
     Get.toNamed(
@@ -470,6 +667,7 @@ class ItineraryDetailsController extends GetxController {
       arguments: {'tripId': tripId, 'day': day.dayNumber, 'date': day.date},
     );
   }
+
   void onCheckpointDetails() {}
 
   void onCancelTrip() {

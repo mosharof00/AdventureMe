@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -6,19 +7,25 @@ import 'package:get/get.dart';
 import 'package:adventureme/app/core/extensions/sizedbox_extension.dart';
 import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
+import 'package:adventureme/app/core/utils/logger.dart';
+import 'package:adventureme/app/data/models/trip_models/story_status_model.dart';
+import 'package:adventureme/app/data/repositories/trip_repository.dart';
 import 'package:adventureme/app/global/widgets/app_text.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
 import 'package:adventureme/gen/assets.gen.dart';
 
-/// Progress overlay shown while a story is generating.
-/// Navigates to [Routes.GENERATE_STORY] when progress reaches 100%.
+/// Starts the AI story for [tripId] and shows its progress by polling
+/// `story/status`. Opens [Routes.GENERATE_STORY] once the story is READY.
+/// Closing it doesn't cancel the job; opening it again picks the job back up.
 class StoryGeneratingDialog extends StatefulWidget {
-  const StoryGeneratingDialog({super.key});
+  const StoryGeneratingDialog({super.key, required this.tripId});
 
-  static Future<void> show() {
+  final String tripId;
+
+  static Future<void> show(String tripId) {
     return Get.dialog(
-      const StoryGeneratingDialog(),
+      StoryGeneratingDialog(tripId: tripId),
       barrierDismissible: false,
       barrierColor: Colors.black.withValues(alpha: 0.35),
     );
@@ -29,51 +36,114 @@ class StoryGeneratingDialog extends StatefulWidget {
 }
 
 class _StoryGeneratingDialogState extends State<StoryGeneratingDialog> {
-  double _progress = 0.12;
-  Timer? _timer;
+  static const _pollEvery = Duration(seconds: 2);
+  static const _maxFailedPolls = 3;
+
+  final ITripRepository _repository = Get.find<ITripRepository>();
+
+  /// 0–100 from the server; never moves backwards on screen.
+  int _progress = 0;
+  String? _error;
+  String? _itineraryId;
+  Timer? _poller;
+  int _failedPolls = 0;
   bool _navigating = false;
 
-  int get _percent => (_progress * 100).round();
+  String get _stepText {
+    if (_progress >= 100) return 'Your story is ready!';
+    if (_progress >= 85) return 'Adding the final touches…';
+    if (_progress >= 55) return 'Writing your story…';
+    if (_progress >= 25) return 'Finding the moments that mattered…';
+    return 'Reading your memories…';
+  }
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(milliseconds: 80), (timer) {
+    _start();
+  }
+
+  Future<void> _start() async {
+    setState(() {
+      _error = null;
+      _failedPolls = 0;
+    });
+    try {
+      final response = await _repository.generateStory(widget.tripId);
       if (!mounted) return;
-      setState(() {
-        if (_progress >= 0.98) {
-          _progress = 1.0;
-          timer.cancel();
-          _onFinished();
+      if (response.success != true || response.isFailed) {
+        _fail(response.message ?? 'Unable to start your story.');
+        return;
+      }
+      _apply(response);
+      if (!response.isReady) _poll();
+    } catch (e) {
+      Log.e('[Generate Story] $e');
+      if (mounted) _fail('Unable to start your story. Please try again.');
+    }
+  }
+
+  void _poll() {
+    _poller?.cancel();
+    _poller = Timer(_pollEvery, () async {
+      try {
+        final response = await _repository.getStoryStatus(widget.tripId);
+        if (!mounted) return;
+        _failedPolls = 0;
+        if (response.isFailed) {
+          _fail(response.message ?? 'We couldn\'t write your story this time.');
           return;
         }
-        final remaining = 1.0 - _progress;
-        _progress = (_progress + remaining * 0.035).clamp(0.0, 1.0);
-      });
+        _apply(response);
+      } catch (e) {
+        Log.e('[Story Status] $e');
+        if (!mounted) return;
+        if (++_failedPolls >= _maxFailedPolls) {
+          _fail('Lost connection while writing your story.');
+          return;
+        }
+      }
+      if (mounted && !_navigating && _error == null) _poll();
     });
+  }
+
+  void _apply(StoryStatusResponse response) {
+    _itineraryId = response.itineraryId ?? _itineraryId;
+    final next = response.isReady ? 100 : (response.progress ?? _progress);
+    setState(() => _progress = math.max(_progress, next.clamp(0, 100)));
+    if (response.isReady) _onFinished();
+  }
+
+  void _fail(String message) {
+    _poller?.cancel();
+    setState(() => _error = message);
   }
 
   void _onFinished() {
     if (_navigating) return;
     _navigating = true;
-    Future<void>.delayed(const Duration(milliseconds: 350), () {
+    _poller?.cancel();
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
       if (!mounted) return;
-      Get.back(); // close dialog
-      Get.toNamed(Routes.GENERATE_STORY);
+      if (Get.isSnackbarOpen) Get.closeAllSnackbars();
+      Get.back();
+      Get.toNamed(
+        Routes.GENERATE_STORY,
+        arguments: {'tripId': widget.tripId, 'itineraryId': _itineraryId},
+      );
     });
   }
 
   void _onContinue() {
-    if (_progress < 1.0) {
-      Get.back();
-      return;
-    }
-    _onFinished();
+    if (_navigating) return;
+    _poller?.cancel();
+    if (Get.isSnackbarOpen) Get.closeAllSnackbars();
+    Get.back();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _poller?.cancel();
     super.dispose();
   }
 
@@ -107,7 +177,9 @@ class _StoryGeneratingDialogState extends State<StoryGeneratingDialog> {
             ),
             22.height,
             AppText(
-              'Yey! Your Story is Generating!',
+              _error == null
+                  ? 'Yey! Your Story is Generating!'
+                  : 'Story Paused',
               style: context.headlineMedium.copyWith(
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF2D2D2D),
@@ -117,21 +189,48 @@ class _StoryGeneratingDialogState extends State<StoryGeneratingDialog> {
             ),
             12.height,
             AppText(
-              'We will notify you when your story is fully ready! Thanks for your patience!',
+              _error ??
+                  'You can keep exploring. Your story keeps writing in the background.',
               style: context.bodyMedium.copyWith(
-                color: AppColor.hintText,
+                color: _error == null ? AppColor.hintText : AppColor.error,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
               maxLines: 3,
             ),
-            28.height,
-            _ProgressBar(progress: _progress, label: '$_percent%'),
-            28.height,
-            GlobalButton(
-              text: 'Continue Exploring',
-              onTap: _onContinue,
-            ),
+            if (_error == null) ...[
+              28.height,
+              _ProgressBar(progress: _progress / 100, label: '$_progress%'),
+              10.height,
+              AppText(
+                _stepText,
+                style: context.labelSmall.copyWith(color: AppColor.hintText),
+                textAlign: TextAlign.center,
+              ),
+              24.height,
+              GlobalButton(
+                text: 'Continue Exploring',
+                onTap: _onContinue,
+              ),
+            ] else ...[
+              28.height,
+              Row(
+                children: [
+                  Expanded(
+                    child: GlobalButton(
+                      text: 'Close',
+                      color: const Color(0xFFD6E4F0),
+                      textColor: const Color(0xFF2D2D2D),
+                      onTap: _onContinue,
+                    ),
+                  ),
+                  12.width,
+                  Expanded(
+                    child: GlobalButton(text: 'Try Again', onTap: _start),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

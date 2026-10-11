@@ -19,7 +19,8 @@ class TripTimerSection extends GetView<ItineraryDetailsController> {
       if (controller.isCancelled) return const SizedBox.shrink();
       if (controller.isCompleted) return const _CompletedCard();
 
-      final isStarting = controller.isStarting.value;
+      final isStarting =
+          controller.isStarting.value || controller.isEnding.value;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [

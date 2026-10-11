@@ -34,7 +34,7 @@ class PhotoChapterTab extends GetView<ItineraryDetailsController> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: AppText(
-                  'Memories from day ${d + 1}',
+                  'Memories from day ${memoryDays[d].dayNumber}',
                   style: context.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF2D2D2D),
@@ -42,7 +42,9 @@ class PhotoChapterTab extends GetView<ItineraryDetailsController> {
                 ),
               ),
               16.height,
-              for (final checkpoint in memoryDays[d].checkpoints) ...[
+              for (final checkpoint in memoryDays[d].checkpoints.where(
+                (c) => c.photos.isNotEmpty,
+              )) ...[
                 _MemoryBlock(checkpoint: checkpoint),
                 20.height,
               ],
@@ -97,16 +99,18 @@ class _MemoryBlock extends StatelessWidget {
               color: const Color(0xFF2D2D2D),
             ),
           ),
-          8.height,
-          AppText(
-            '"${checkpoint.quote}"',
-            style: context.bodySmall.copyWith(
-              color: AppColor.hintText,
-              fontStyle: FontStyle.italic,
-              height: 1.5,
+          if (checkpoint.quote.isNotEmpty) ...[
+            8.height,
+            AppText(
+              '"${checkpoint.quote}"',
+              style: context.bodySmall.copyWith(
+                color: AppColor.hintText,
+                fontStyle: FontStyle.italic,
+                height: 1.5,
+              ),
+              maxLines: 4,
             ),
-            maxLines: 4,
-          ),
+          ],
           12.height,
           _Collage(photos: checkpoint.photos),
           8.height,

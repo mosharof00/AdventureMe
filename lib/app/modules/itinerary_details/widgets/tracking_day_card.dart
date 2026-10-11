@@ -217,7 +217,18 @@ class _CheckpointTile extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF2D2D2D),
                           ),
+                          maxLines: 2,
                         ),
+                        if (checkpoint.address != null) ...[
+                          2.height,
+                          AppText(
+                            checkpoint.address!,
+                            style: context.labelSmall.copyWith(
+                              color: AppColor.hintText,
+                            ),
+                            maxLines: 1,
+                          ),
+                        ],
                         4.height,
                         Row(
                           children: [
@@ -227,10 +238,15 @@ class _CheckpointTile extends StatelessWidget {
                               color: AppColor.hintText,
                             ),
                             5.width,
-                            AppText(
-                              '${checkpoint.time} • ${checkpoint.duration}',
-                              style: context.labelSmall.copyWith(
-                                color: AppColor.hintText,
+                            Flexible(
+                              child: AppText(
+                                checkpoint.duration.isEmpty
+                                    ? checkpoint.time
+                                    : '${checkpoint.time} • ${checkpoint.duration}',
+                                style: context.labelSmall.copyWith(
+                                  color: AppColor.hintText,
+                                ),
+                                maxLines: 1,
                               ),
                             ),
                           ],
@@ -238,9 +254,15 @@ class _CheckpointTile extends StatelessWidget {
                       ],
                     ),
                   ),
+                  8.width,
                   AppText(
-                    checkpoint.label,
-                    style: context.labelSmall.copyWith(color: AppColor.hintText),
+                    checkpoint.isCompleted ? 'Completed' : 'Pending',
+                    style: context.labelSmall.copyWith(
+                      color: checkpoint.isCompleted
+                          ? const Color(0xFF1E8E5A)
+                          : const Color(0xFF8B6914),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),

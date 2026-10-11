@@ -48,6 +48,13 @@ class ApiEndpoint {
   static String tripDetails(String tripId) =>
       '$trips/$tripId'; // get, patch: update, delete: cancel
   static String startTrip(String tripId) => '$trips/$tripId/start'; // post
+  static String endTrip(String tripId) => '$trips/$tripId/end'; // post
+  static String generateStory(String tripId) =>
+      '$trips/$tripId/story/generate'; // post
+  static String storyStatus(String tripId) =>
+      '$trips/$tripId/story/status'; // get
+  static String tripReflection(String tripId) =>
+      '$trips/$tripId/reflection'; // post
   static String tripIntention(String tripId) =>
       '$trips/$tripId/intention'; // post
   static String dayPhotos(String tripId, int day) =>

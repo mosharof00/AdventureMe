@@ -1,4 +1,5 @@
 import 'package:adventureme/app/core/constants/enums.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_map_model.dart';
 
 class TripResponse {
   final bool? success;
@@ -69,6 +70,7 @@ class TripData {
   final String? intentionType;
   final List<String> intentionTags;
   final DateTime? anticipatedAt;
+  final DateTime? reflectedAt;
   final String? userId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -99,6 +101,7 @@ class TripData {
     this.intentionType,
     this.intentionTags = const [],
     this.anticipatedAt,
+    this.reflectedAt,
     this.userId,
     this.createdAt,
     this.updatedAt,
@@ -110,6 +113,8 @@ class TripData {
   bool get hasThumbnail => thumbnailUrl != null && thumbnailUrl!.isNotEmpty;
 
   bool get hasIntention => intention != null && intention!.trim().isNotEmpty;
+
+  bool get hasReflection => reflectedAt != null;
 
   factory TripData.fromJson(Map<String, dynamic> json) => TripData(
     id: json['id'],
@@ -137,6 +142,7 @@ class TripData {
     intentionType: json['intention_type'],
     intentionTags: _strings(json['intention_tags']),
     anticipatedAt: _date(json['anticipated_at']),
+    reflectedAt: _date(json['reflected_at']),
     userId: json['user_id'],
     createdAt: _date(json['created_at']),
     updatedAt: _date(json['updated_at']),
@@ -150,6 +156,7 @@ class TripData {
     String? intention,
     String? intentionType,
     List<String>? intentionTags,
+    DateTime? reflectedAt,
     List<TripInterval>? tripIntervals,
   }) => TripData(
     id: id,
@@ -176,6 +183,7 @@ class TripData {
     intentionType: intentionType ?? this.intentionType,
     intentionTags: intentionTags ?? this.intentionTags,
     anticipatedAt: anticipatedAt,
+    reflectedAt: reflectedAt ?? this.reflectedAt,
     userId: userId,
     createdAt: createdAt,
     updatedAt: updatedAt,
@@ -212,6 +220,26 @@ class TripIntentionResponse {
   }
 }
 
+/// `POST /trips/{id}/reflection`
+class TripReflectionResponse {
+  final bool? success;
+  final String? message;
+  final DateTime? reflectedAt;
+
+  TripReflectionResponse({this.success, this.message, this.reflectedAt});
+
+  factory TripReflectionResponse.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] is Map<String, dynamic>
+        ? json['data'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+    return TripReflectionResponse(
+      success: json['success'],
+      message: json['message'],
+      reflectedAt: _date(data['reflected_at']),
+    );
+  }
+}
+
 /// One day of a trip.
 class TripInterval {
   final String? id;
@@ -224,8 +252,8 @@ class TripInterval {
   final DateTime? dailyReflectedAt;
   final DateTime? photosCategorizedAt;
 
-  /// Kept raw until the checkpoint payload is finalised.
-  final List<Map<String, dynamic>> checkPoints;
+  /// Sorted by `display_order`.
+  final List<Checkpoint> checkPoints;
 
   TripInterval({
     this.id,
@@ -252,7 +280,9 @@ class TripInterval {
     photosCategorizedAt: _date(json['photos_categorized_at']),
     checkPoints: (json['checkPoints'] as List? ?? const [])
         .whereType<Map<String, dynamic>>()
-        .toList(),
+        .map(Checkpoint.fromJson)
+        .toList()
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder)),
   );
 }
 

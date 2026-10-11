@@ -9,6 +9,7 @@ import 'package:adventureme/app/data/models/trip_models/day_photos_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_map_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_memory_model.dart';
+import 'package:adventureme/app/data/models/trip_models/story_status_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_prompt_model.dart';
 
@@ -49,6 +50,19 @@ abstract class ITripRepository {
   Future<TripResponse> getTripDetails(String tripId);
 
   Future<TripResponse> startTrip(String tripId);
+
+  Future<TripResponse> endTrip(String tripId);
+
+  /// Starts a story job, or returns the recently generated one.
+  Future<StoryStatusResponse> generateStory(String tripId);
+
+  Future<StoryStatusResponse> getStoryStatus(String tripId);
+
+  Future<TripReflectionResponse> saveReflection({
+    required String tripId,
+    required String reflection,
+    required DominantEmotion emotion,
+  });
 
   Future<TripIntentionResponse> saveIntention({
     required String tripId,
@@ -249,6 +263,49 @@ class TripRepository implements ITripRepository {
       () => _client.dio.post(ApiEndpoint.startTrip(tripId)),
       (dynamic data) => TripResponse.fromJson(data),
       'Start Trip',
+    );
+  }
+
+  @override
+  Future<TripResponse> endTrip(String tripId) {
+    return _client.handleRequest(
+      () => _client.dio.post(ApiEndpoint.endTrip(tripId)),
+      (dynamic data) => TripResponse.fromJson(data),
+      'End Trip',
+    );
+  }
+
+  @override
+  Future<StoryStatusResponse> generateStory(String tripId) {
+    return _client.handleRequest(
+      () => _client.dio.post(ApiEndpoint.generateStory(tripId)),
+      (dynamic data) => StoryStatusResponse.fromJson(data),
+      'Generate Story',
+    );
+  }
+
+  @override
+  Future<StoryStatusResponse> getStoryStatus(String tripId) {
+    return _client.handleRequest(
+      () => _client.dio.get(ApiEndpoint.storyStatus(tripId)),
+      (dynamic data) => StoryStatusResponse.fromJson(data),
+      'Story Status',
+    );
+  }
+
+  @override
+  Future<TripReflectionResponse> saveReflection({
+    required String tripId,
+    required String reflection,
+    required DominantEmotion emotion,
+  }) {
+    return _client.handleRequest(
+      () => _client.dio.post(
+        ApiEndpoint.tripReflection(tripId),
+        data: {'reflection': reflection, 'dominant_emotion': emotion.apiValue},
+      ),
+      (dynamic data) => TripReflectionResponse.fromJson(data),
+      'Save Trip Reflection',
     );
   }
 

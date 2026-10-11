@@ -43,6 +43,24 @@ enum TripStatus {
 }
 
 /// Why the user is taking a trip (`intention_type`).
+/// The main feeling of a finished trip (`dominant_emotion`).
+enum DominantEmotion {
+  joy('joy', 'Joy', '😄'),
+  gratitude('gratitude', 'Gratitude', '🙏'),
+  peace('peace', 'Peace', '😌'),
+  excitement('excitement', 'Excitement', '🤩'),
+  love('love', 'Love', '❤️'),
+  awe('awe', 'Awe', '😮'),
+  nostalgia('nostalgia', 'Nostalgia', '🥹'),
+  bittersweet('bittersweet', 'Bittersweet', '🙂');
+
+  const DominantEmotion(this.apiValue, this.label, this.emoji);
+
+  final String apiValue;
+  final String label;
+  final String emoji;
+}
+
 enum IntentionType {
   firstTime('FIRST_TIME', 'First Time'),
   celebration('CELEBRATION', 'Celebration'),
