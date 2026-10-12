@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:adventureme/app/routes/app_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -85,6 +86,22 @@ class ItineraryHeader extends GetView<ItineraryController> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+                8.width,
+                GestureDetector(
+                  onTap: () => Get.toNamed(Routes.CREATE_NEW_TRIP),
+                  child: Container(
+                    padding: EdgeInsets.all(6.r),
+                    decoration: BoxDecoration(
+                      color: Colors.black12,
+                      shape: BoxShape.circle,
+                    ),
+                    child: AppSvgIcon(
+                      Assets.icons.addIcon,
+                      size: 24.sp,
+                      color: AppColor.white,
                     ),
                   ),
                 ),

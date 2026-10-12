@@ -14,6 +14,9 @@ import 'package:flutter/widgets.dart';
 class $AssetsIconsGen {
   const $AssetsIconsGen();
 
+  /// File path: assets/icons/add_icon.svg
+  String get addIcon => 'assets/icons/add_icon.svg';
+
   /// File path: assets/icons/arrow_back_icon.svg
   String get arrowBackIcon => 'assets/icons/arrow_back_icon.svg';
 
@@ -143,6 +146,7 @@ class $AssetsIconsGen {
 
   /// List of all assets
   List<String> get values => [
+    addIcon,
     arrowBackIcon,
     arrowForwordIcon,
     arrowsDownIcon,

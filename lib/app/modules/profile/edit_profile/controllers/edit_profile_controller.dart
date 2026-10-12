@@ -71,10 +71,21 @@ class EditProfileController extends GetxController {
     _loadInitialData();
   }
 
-  void _loadInitialData() {
-    final user = Get.isRegistered<ProfileController>()
+  Future<void> _loadInitialData() async {
+    var user = Get.isRegistered<ProfileController>()
         ? Get.find<ProfileController>().user.value
         : null;
+    if (user == null && Get.isRegistered<HomeController>()) {
+      user = Get.find<HomeController>().user.value;
+    }
+    if (user == null) {
+      try {
+        final response = await _authRepository.getMe();
+        if (response.success == true) user = response.data;
+      } catch (e) {
+        handleException(e, context: 'Edit Profile - Get Me');
+      }
+    }
     _original = user;
     if (user == null) return;
 
@@ -144,7 +155,12 @@ class EditProfileController extends GetxController {
     final source = await _pickImageSource();
     if (source == null) return;
 
-    final file = await ImagePickerHelper.pickSingleFile(imageSource: source);
+    final file = await ImagePickerHelper.pickSingleFile(
+      imageSource: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
     if (file == null) return;
 
     localAvatar.value = File(file.path);
