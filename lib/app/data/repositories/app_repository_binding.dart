@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:adventureme/app/core/network/api_client.dart';
 import 'package:adventureme/app/core/services/map_service.dart';
 import 'package:adventureme/app/core/services/permission_service.dart';
+import 'package:adventureme/app/core/services/photo_viewer_service.dart';
 import 'package:adventureme/app/core/services/trip_prompt_service.dart';
 import 'auth_repository.dart';
 import 'product_repository.dart';
@@ -21,6 +22,9 @@ class AppRepositoryBinding extends Bindings {
 
     // TripPromptService — permanent, asks the daily trip questions anywhere
     Get.put<TripPromptService>(TripPromptService(), permanent: true);
+
+    // PhotoViewerService — permanent, opens one or many photos fullscreen
+    Get.put<PhotoViewerService>(PhotoViewerService(), permanent: true);
 
     // Repositories — lazy, created only when first Get.find() is called
     Get.lazyPut<IAuthRepository>(

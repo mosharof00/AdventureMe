@@ -146,12 +146,7 @@ class _SearchBox extends GetView<SelectLocationController> {
                     color: AppColor.hintText,
                     size: 20.sp,
                   ),
-                  suffixIcon: controller.isSearching.value
-                      ? Padding(
-                          padding: EdgeInsets.all(14.r),
-                          child: GlobalLoading(size: 16.sp),
-                        )
-                      : controller.searchText.value.isEmpty
+                  suffixIcon: controller.searchText.value.isEmpty
                       ? null
                       : IconButton(
                           onPressed: controller.clearSearch,
@@ -167,11 +162,16 @@ class _SearchBox extends GetView<SelectLocationController> {
           ),
           Obx(() {
             final results = controller.results;
+            final searching = controller.isSearching.value;
             final noMatch = controller.noResults.value;
-            if (results.isEmpty && !noMatch) return const SizedBox.shrink();
+            if (!searching && results.isEmpty && !noMatch) {
+              return const SizedBox.shrink();
+            }
             return Container(
               margin: EdgeInsets.only(top: 8.h),
-              constraints: BoxConstraints(maxHeight: 280.h),
+              constraints: searching || noMatch
+                  ? null
+                  : BoxConstraints(maxHeight: 280.h),
               decoration: BoxDecoration(
                 color: AppColor.white,
                 borderRadius: BorderRadius.circular(14.r),
@@ -183,41 +183,80 @@ class _SearchBox extends GetView<SelectLocationController> {
                   ),
                 ],
               ),
-              child: noMatch
-                  ? Padding(
-                      padding: EdgeInsets.all(16.r),
-                      child: AppText(
-                        'No places found. Try a different name.',
-                        style: context.bodySmall.copyWith(
-                          color: AppColor.hintText,
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(14.r),
+                clipBehavior: Clip.antiAlias,
+                child: searching
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 14.w,
+                          vertical: 12.h,
                         ),
-                      ),
-                    )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      padding: EdgeInsets.symmetric(vertical: 6.h),
-                      itemCount: results.length,
-                      separatorBuilder: (_, _) => Divider(
-                        height: 1,
-                        color: Colors.grey.shade100,
-                      ),
-                      itemBuilder: (_, i) => ListTile(
-                        dense: true,
-                        leading: Icon(
-                          Icons.place_outlined,
-                          color: AppColor.primary,
-                          size: 20.sp,
+                        child: Row(
+                          children: [
+                            GlobalLoading(size: 20.sp),
+                            10.width,
+                            AppText(
+                              'Searching…',
+                              style: context.bodyMedium.copyWith(
+                                color: AppColor.hintText,
+                              ),
+                            ),
+                          ],
                         ),
-                        title: AppText(
-                          results[i].label,
-                          style: context.bodyMedium.copyWith(
-                            color: const Color(0xFF2D2D2D),
+                      )
+                    : noMatch
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 14.w,
+                          vertical: 12.h,
+                        ),
+                        child: AppText(
+                          'No places found. Try a different name.',
+                          style: context.bodySmall.copyWith(
+                            color: AppColor.hintText,
                           ),
-                          maxLines: 2,
                         ),
-                        onTap: () => controller.selectResult(results[i]),
+                      )
+                    : ListView.separated(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.symmetric(vertical: 6.h),
+                        itemCount: results.length,
+                        separatorBuilder: (_, _) => Divider(
+                          height: 1,
+                          color: Colors.grey.shade100,
+                        ),
+                        itemBuilder: (_, i) => InkWell(
+                          onTap: () => controller.selectResult(results[i]),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14.w,
+                              vertical: 12.h,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.place_outlined,
+                                  color: AppColor.primary,
+                                  size: 20.sp,
+                                ),
+                                10.width,
+                                Expanded(
+                                  child: AppText(
+                                    results[i].label,
+                                    style: context.bodyMedium.copyWith(
+                                      color: const Color(0xFF2D2D2D),
+                                    ),
+                                    maxLines: 2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+              ),
             );
           }),
         ],

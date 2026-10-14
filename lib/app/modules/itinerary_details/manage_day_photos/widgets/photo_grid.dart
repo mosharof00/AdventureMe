@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:adventureme/app/global/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:adventureme/app/core/extensions/sizedbox_extension.dart';
 import 'package:adventureme/app/core/extensions/text_style_extension.dart';
+import 'package:adventureme/app/core/services/photo_viewer_service.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
+import 'package:adventureme/app/data/models/trip_models/day_photos_model.dart';
 import 'package:adventureme/app/global/widgets/app_text.dart';
 import 'package:adventureme/app/global/widgets/cached_image.dart';
 import 'package:adventureme/app/global/widgets/global_loading.dart';
@@ -48,22 +52,25 @@ class PhotoGrid extends GetView<ManageDayPhotosController> {
             spacing: spacing,
             runSpacing: spacing,
             children: [
-              for (final photo in uploaded)
+              for (var i = 0; i < uploaded.length; i++)
                 _ImageCell(
                   size: tile,
                   image: CachedImage(
-                    imgUrl: photo.previewUrl,
+                    imgUrl: uploaded[i].previewUrl,
                     fit: BoxFit.cover,
                   ),
-                  isDraft: photo.isDraft,
-                  isBusy: controller.deletingId.value == photo.id,
-                  onLongPress: () => controller.onPhotoLongPress(photo),
+                  isDraft: uploaded[i].isDraft,
+                  isBusy: controller.deletingId.value == uploaded[i].id,
+                  onTap: () => _viewUploaded(uploaded, i),
+                  onLongPress: () =>
+                      controller.onPhotoLongPress(uploaded[i]),
                 ),
-              for (final file in pending)
+              for (var i = 0; i < pending.length; i++)
                 _ImageCell(
                   size: tile,
-                  image: Image.file(file, fit: BoxFit.cover),
-                  onRemove: () => controller.removePending(file),
+                  image: Image.file(pending[i], fit: BoxFit.cover),
+                  onTap: () => _viewPending(pending, i),
+                  onRemove: () => controller.removePending(pending[i]),
                 ),
               _UploadTile(size: tile, onTap: controller.pickImages),
             ],
@@ -85,6 +92,25 @@ class PhotoGrid extends GetView<ManageDayPhotosController> {
       );
     });
   }
+
+  void _viewUploaded(List<TripPhoto> uploaded, int index) {
+    final urls = [
+      for (final photo in uploaded)
+        if (photo.viewUrl.isNotEmpty) photo.viewUrl,
+    ];
+    if (urls.isEmpty) return;
+    Get.find<PhotoViewerService>().open(
+      urls,
+      index: index.clamp(0, urls.length - 1),
+    );
+  }
+
+  void _viewPending(List<File> pending, int index) {
+    Get.find<PhotoViewerService>().open(
+      [for (final file in pending) file.path],
+      index: index,
+    );
+  }
 }
 
 class _ImageCell extends StatelessWidget {
@@ -93,6 +119,7 @@ class _ImageCell extends StatelessWidget {
     required this.image,
     this.isDraft = false,
     this.isBusy = false,
+    this.onTap,
     this.onRemove,
     this.onLongPress,
   });
@@ -101,6 +128,7 @@ class _ImageCell extends StatelessWidget {
   final Widget image;
   final bool isDraft;
   final bool isBusy;
+  final VoidCallback? onTap;
 
   /// Picked photos are removed with ✕; uploaded ones via long press.
   final VoidCallback? onRemove;
@@ -109,6 +137,7 @@ class _ImageCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onTap: isBusy ? null : onTap,
       onLongPress: onLongPress,
       child: SizedBox(
         width: size,

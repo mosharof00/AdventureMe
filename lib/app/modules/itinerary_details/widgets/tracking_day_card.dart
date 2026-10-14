@@ -156,7 +156,7 @@ class TrackingDayCard extends GetView<ItineraryDetailsController> {
             height: 40.h,
             color: AppColor.primaryDisable,
             textColor: const Color(0xFF2D2D2D),
-            onTap: controller.onCheckpointDetails,
+            onTap: () => controller.onViewDayDetails(day),
           ),
         ),
       ],

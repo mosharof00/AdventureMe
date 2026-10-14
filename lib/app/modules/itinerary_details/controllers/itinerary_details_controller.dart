@@ -9,6 +9,7 @@ import 'package:adventureme/app/core/constants/enums.dart';
 import 'package:adventureme/app/core/network/handle_exceptions.dart';
 import 'package:adventureme/app/core/services/trip_prompt_service.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
+import 'package:adventureme/app/data/models/trip_models/day_photos_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_map_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
@@ -32,8 +33,6 @@ class TripCheckpoint {
     required this.time,
     this.duration = '',
     this.isCompleted = false,
-    this.quote = '',
-    this.photos = const [],
   });
 
   final String title;
@@ -41,8 +40,6 @@ class TripCheckpoint {
   final String time;
   final String duration;
   final bool isCompleted;
-  final String quote;
-  final List<String> photos;
 
   static final _time = DateFormat('h:mm a');
 
@@ -96,8 +93,11 @@ class TrackingDay {
 }
 
 /// Opened with a [TripListItem] (or a trip id) as the route argument.
-class ItineraryDetailsController extends GetxController {
+class ItineraryDetailsController extends GetxController
+    with GetSingleTickerProviderStateMixin {
   final ITripRepository _tripRepository = Get.find<ITripRepository>();
+
+  late final TabController tabController;
 
   String? tripId;
 
@@ -121,6 +121,8 @@ class ItineraryDetailsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    tabController = TabController(length: 2, vsync: this);
+    tabController.addListener(_onTabChanged);
     final arg = Get.arguments;
     if (arg is TripListItem) {
       _preview = arg;
@@ -130,6 +132,21 @@ class ItineraryDetailsController extends GetxController {
       tripId = arg;
     }
     fetchDetails();
+  }
+
+  /// True while switching tabs from [onViewDayDetails], so the tab listener
+  /// does not reset the day to Day 1.
+  bool _fromViewDetails = false;
+
+  void _onTabChanged() {
+    if (tabController.indexIsChanging) return;
+    if (tabController.index != 1) return;
+    if (_fromViewDetails) {
+      _fromViewDetails = false;
+      return;
+    }
+    // Tapping Photo Chapter always opens the first day.
+    openPhotoChapter(days.isEmpty ? 1 : days.first.dayNumber);
   }
 
   // ── Loading ──────────────────────────────────────────
@@ -178,6 +195,14 @@ class ItineraryDetailsController extends GetxController {
         ),
     ]);
     _syncTimer();
+    if (_chapterWanted) {
+      openPhotoChapter(
+        selectedChapterDayNumber.value > 0
+            ? selectedChapterDayNumber.value
+            : (days.isEmpty ? 1 : days.first.dayNumber),
+        force: true,
+      );
+    }
   }
 
   // ── Trip info ────────────────────────────────────────
@@ -211,11 +236,78 @@ class ItineraryDetailsController extends GetxController {
   /// Label of the photo button on a completed day card.
   String get photoActionLabel => isCompleted ? 'Edit Photos' : 'Upload Photos';
 
-  /// Days with checkpoint photos (for the Photo Chapter tab).
-  List<TrackingDay> get memoryDays => [
-    for (final day in days)
-      if (day.checkpoints.any((c) => c.photos.isNotEmpty)) day,
-  ];
+  // ── Photo Chapter ────────────────────────────────────
+  /// Day currently shown on the Photo Chapter tab.
+  final selectedChapterDayNumber = 0.obs;
+  final selectedChapterDay = Rxn<TrackingDay>();
+  final chapterMoments = <TripMoment>[].obs;
+  final isChapterLoading = false.obs;
+  final chapterError = false.obs;
+
+  /// Last successfully loaded day; skip re-fetch unless [force].
+  int? _loadedChapterDay;
+
+  /// The tab has been opened; reload once trip days arrive.
+  bool _chapterWanted = false;
+
+  /// Opens / refreshes Photo Chapter for [dayNumber].
+  Future<void> openPhotoChapter(int dayNumber, {bool force = false}) async {
+    _chapterWanted = true;
+    selectedChapterDayNumber.value = dayNumber;
+    TrackingDay? day;
+    for (final d in days) {
+      if (d.dayNumber == dayNumber) {
+        day = d;
+        break;
+      }
+    }
+    selectedChapterDay.value = day;
+    await loadPhotoChapter(force: force);
+  }
+
+  /// Fetches published moments for [selectedChapterDayNumber].
+  Future<void> loadPhotoChapter({bool force = false}) async {
+    _chapterWanted = true;
+    final id = tripId;
+    final dayNumber = selectedChapterDayNumber.value > 0
+        ? selectedChapterDayNumber.value
+        : (days.isEmpty ? 1 : days.first.dayNumber);
+    if (id == null || isChapterLoading.value) return;
+    if (!force && _loadedChapterDay == dayNumber) return;
+    if (days.isEmpty) return;
+
+    selectedChapterDayNumber.value = dayNumber;
+    TrackingDay? day;
+    for (final d in days) {
+      if (d.dayNumber == dayNumber) {
+        day = d;
+        break;
+      }
+    }
+    selectedChapterDay.value = day;
+
+    try {
+      isChapterLoading.value = true;
+      chapterError.value = false;
+      final response = await _tripRepository.getDayPhotos(id, dayNumber);
+      if (isClosed) return;
+      if (response.success != true) {
+        chapterError.value = true;
+        chapterMoments.clear();
+        return;
+      }
+      chapterMoments.assignAll(
+        response.moments.where((m) => !m.isDraft && m.photos.isNotEmpty),
+      );
+      _loadedChapterDay = dayNumber;
+    } catch (e) {
+      chapterError.value = true;
+      chapterMoments.clear();
+      handleException(e, context: 'Photo Chapter');
+    } finally {
+      isChapterLoading.value = false;
+    }
+  }
 
   // ── Timer ────────────────────────────────────────────
   String get timerText {
@@ -660,15 +752,28 @@ class ItineraryDetailsController extends GetxController {
     if (isCompleted && id != null) StoryGeneratingDialog.show(id);
   }
 
-  void onManageDayPhotos(TrackingDay day) {
+  Future<void> onManageDayPhotos(TrackingDay day) async {
     if (tripId == null) return;
-    Get.toNamed(
+    await Get.toNamed(
       Routes.MANAGE_DAY_PHOTOS,
       arguments: {'tripId': tripId, 'day': day.dayNumber, 'date': day.date},
     );
+    if (_chapterWanted) {
+      openPhotoChapter(
+        selectedChapterDayNumber.value > 0
+            ? selectedChapterDayNumber.value
+            : day.dayNumber,
+        force: true,
+      );
+    }
   }
 
-  void onCheckpointDetails() {}
+  /// Timeline "View Details" → Photo Chapter for that day.
+  void onViewDayDetails(TrackingDay day) {
+    _fromViewDetails = true;
+    openPhotoChapter(day.dayNumber);
+    if (tabController.index != 1) tabController.animateTo(1);
+  }
 
   void onCancelTrip() {
     AppBottomSheet.show(
@@ -739,8 +844,11 @@ class ItineraryDetailsController extends GetxController {
   }
 
   @override
+  @override
   void onClose() {
     _ticker?.cancel();
+    tabController.removeListener(_onTabChanged);
+    tabController.dispose();
     super.onClose();
   }
 }

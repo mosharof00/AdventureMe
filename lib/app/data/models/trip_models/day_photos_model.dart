@@ -34,6 +34,9 @@ class TripPhoto {
   /// Smallest available image, for grids.
   String get previewUrl => thumbnailUrl ?? displayUrl ?? url ?? '';
 
+  /// Best available image for the full-screen viewer.
+  String get viewUrl => displayUrl ?? url ?? thumbnailUrl ?? '';
+
   factory TripPhoto.fromJson(Map<String, dynamic> json) => TripPhoto(
         id: json['id']?.toString(),
         category: json['category'],
@@ -51,24 +54,40 @@ class TripPhoto {
       );
 }
 
-/// A group of a day's photos with its title/quote (Photo Chapter block).
-class PhotoSection {
-  final String? uploadDate;
+/// One upload of a day's photos with its title, quote and place
+/// (a Photo Chapter block).
+class TripMoment {
+  final String? id;
   final String? title;
   final String? quote;
+  final double? lat;
+  final double? lng;
+  final String? address;
+  final bool isDraft;
+  final DateTime? createdAt;
   final List<TripPhoto> photos;
 
-  PhotoSection({
-    this.uploadDate,
+  TripMoment({
+    this.id,
     this.title,
     this.quote,
+    this.lat,
+    this.lng,
+    this.address,
+    this.isDraft = false,
+    this.createdAt,
     this.photos = const [],
   });
 
-  factory PhotoSection.fromJson(Map<String, dynamic> json) => PhotoSection(
-        uploadDate: json['upload_date']?.toString(),
+  factory TripMoment.fromJson(Map<String, dynamic> json) => TripMoment(
+        id: json['id']?.toString(),
         title: json['title'],
         quote: json['quote'],
+        lat: (json['lat'] as num?)?.toDouble(),
+        lng: (json['lng'] as num?)?.toDouble(),
+        address: json['address'],
+        isDraft: json['is_draft'] == true,
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
         photos: _photos(json['photos']),
       );
 }
@@ -81,7 +100,9 @@ class DayPhotosResponse {
   final bool isFinalized;
   final DateTime? finalizedAt;
   final int totalPhotos;
-  final List<PhotoSection> sections;
+
+  /// Oldest first.
+  final List<TripMoment> moments;
   final Map<PhotoCategory, List<TripPhoto>> categories;
 
   DayPhotosResponse({
@@ -91,7 +112,7 @@ class DayPhotosResponse {
     this.isFinalized = false,
     this.finalizedAt,
     this.totalPhotos = 0,
-    this.sections = const [],
+    this.moments = const [],
     this.categories = const {},
   });
 
@@ -99,16 +120,21 @@ class DayPhotosResponse {
     final data = json['data'] is Map<String, dynamic>
         ? json['data'] as Map<String, dynamic>
         : const <String, dynamic>{};
-    final sections = (data['sections'] as List? ?? const [])
+    final moments = (data['moments'] as List? ?? const [])
         .whereType<Map<String, dynamic>>()
-        .map(PhotoSection.fromJson)
-        .toList();
+        .map(TripMoment.fromJson)
+        .toList()
+      ..sort((a, b) {
+        final at = a.createdAt, bt = b.createdAt;
+        if (at == null || bt == null) return 0;
+        return at.compareTo(bt);
+      });
 
-    // Older payloads group by `categories`; newer ones only by `sections`.
+    // Older payloads group by `categories`; newer ones only by `moments`.
     final rawCategories = data['categories'] is Map
         ? data['categories'] as Map
         : null;
-    final allPhotos = [for (final s in sections) ...s.photos];
+    final allPhotos = [for (final m in moments) ...m.photos];
 
     return DayPhotosResponse(
       success: json['success'],
@@ -117,7 +143,7 @@ class DayPhotosResponse {
       isFinalized: data['is_finalized'] == true,
       finalizedAt: DateTime.tryParse(data['finalized_at']?.toString() ?? ''),
       totalPhotos: (data['total_photos'] as num?)?.toInt() ?? allPhotos.length,
-      sections: sections,
+      moments: moments,
       categories: {
         for (final category in PhotoCategory.values)
           category: rawCategories != null
@@ -143,12 +169,15 @@ class PhotosActionResponse {
 
   PhotosActionResponse({this.success, this.message, this.photos = const []});
 
-  factory PhotosActionResponse.fromJson(Map<String, dynamic> json) =>
-      PhotosActionResponse(
-        success: json['success'],
-        message: json['message'],
-        photos: _photos(json['data']),
-      );
+  /// `data` is a photo list, or (upload) a moment holding `photos`.
+  factory PhotosActionResponse.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    return PhotosActionResponse(
+      success: json['success'],
+      message: json['message'],
+      photos: _photos(data is Map ? data['photos'] : data),
+    );
+  }
 }
 
 List<TripPhoto> _photos(dynamic value) => (value is List ? value : const [])

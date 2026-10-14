@@ -16,50 +16,51 @@ class ItineraryDetailsView extends GetView<ItineraryDetailsController> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: AppScaffold(
-        appBar: CustomAppBar(
-          title: 'Itinerary Details',
-          showBackButton: true,
-          backgroundColor: Colors.transparent,
-        ),
-        body: Obx(() {
-          if (controller.trip.value == null) {
-            if (controller.hasError.value) {
-              return ShowEmptyResult(
-                title: 'Unable to load this trip',
-                refreshOnTap: controller.fetchDetails,
-              );
-            }
-            return const GlobalLoading();
-          }
-
-          return Column(
-            children: [
-              TabBar(
-                labelColor: AppColor.secondary,
-                unselectedLabelColor: AppColor.hintText,
-                indicatorColor: AppColor.secondary,
-                indicatorSize: TabBarIndicatorSize.tab,
-                indicatorWeight: 3,
-                dividerColor: AppColor.hintText.withValues(alpha: 0.15),
-                labelStyle: context.titleSmall.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-                unselectedLabelStyle: context.titleSmall,
-                tabs: const [
-                  Tab(text: 'Timeline'),
-                  Tab(text: 'Photo Chapter'),
-                ],
-              ),
-              const Expanded(
-                child: TabBarView(children: [TimelineTab(), PhotoChapterTab()]),
-              ),
-            ],
-          );
-        }),
+    return AppScaffold(
+      appBar: CustomAppBar(
+        title: 'Itinerary Details',
+        showBackButton: true,
+        backgroundColor: Colors.transparent,
       ),
+      body: Obx(() {
+        if (controller.trip.value == null) {
+          if (controller.hasError.value) {
+            return ShowEmptyResult(
+              title: 'Unable to load this trip',
+              refreshOnTap: controller.fetchDetails,
+            );
+          }
+          return const GlobalLoading();
+        }
+
+        return Column(
+          children: [
+            TabBar(
+              controller: controller.tabController,
+              labelColor: AppColor.secondary,
+              unselectedLabelColor: AppColor.hintText,
+              indicatorColor: AppColor.secondary,
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorWeight: 3,
+              dividerColor: AppColor.hintText.withValues(alpha: 0.15),
+              labelStyle: context.titleSmall.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: context.titleSmall,
+              tabs: const [
+                Tab(text: 'Timeline'),
+                Tab(text: 'Photo Chapter'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: controller.tabController,
+                children: const [TimelineTab(), PhotoChapterTab()],
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 }
