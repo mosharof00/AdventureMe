@@ -31,6 +31,7 @@ abstract class Routes {
   static const GENERATE_STORY =
       _Paths.ITINERARY_DETAILS + _Paths.GENERATE_STORY;
   static const ARCHIVE_DETAILS = _Paths.ARCHIVE + _Paths.ARCHIVE_DETAILS;
+  static const SELECT_LOCATION = _Paths.SELECT_LOCATION;
 }
 
 abstract class _Paths {
@@ -60,4 +61,5 @@ abstract class _Paths {
   static const VIEW_ITINERARY_MAP = '/view-itinerary-map';
   static const GENERATE_STORY = '/generate-story';
   static const ARCHIVE_DETAILS = '/archive-details';
+  static const SELECT_LOCATION = '/select-location';
 }

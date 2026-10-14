@@ -42,6 +42,8 @@ import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/edit_profile/bindings/edit_profile_binding.dart';
 import '../modules/profile/edit_profile/views/edit_profile_view.dart';
 import '../modules/profile/views/profile_view.dart';
+import '../modules/select_location/bindings/select_location_binding.dart';
+import '../modules/select_location/views/select_location_view.dart';
 import '../modules/settings/bindings/settings_binding.dart';
 import '../modules/settings/privacy_policy/bindings/privacy_policy_binding.dart';
 import '../modules/settings/privacy_policy/views/privacy_policy_view.dart';
@@ -189,6 +191,11 @@ class AppPages {
       name: _Paths.PRIVACY_POLICY,
       page: () => const PrivacyPolicyView(),
       binding: PrivacyPolicyBinding(),
+    ),
+    GetPage(
+      name: _Paths.SELECT_LOCATION,
+      page: () => const SelectLocationView(),
+      binding: SelectLocationBinding(),
     ),
   ];
 }

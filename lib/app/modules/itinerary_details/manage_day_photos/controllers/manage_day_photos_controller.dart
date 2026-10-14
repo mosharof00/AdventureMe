@@ -15,6 +15,7 @@ import 'package:adventureme/app/global/widgets/global_loading.dart';
 import 'package:adventureme/app/global/widgets/global_snackbar.dart';
 import 'package:adventureme/gen/assets.gen.dart';
 
+import '../widgets/photo_moment_dialog.dart';
 import '../widgets/upload_summary_sheet.dart';
 
 /// Opened with `{'tripId': String, 'day': int, 'date': String}`.
@@ -191,6 +192,10 @@ class ManageDayPhotosController extends GetxController {
   // ── Save as Draft ────────────────────────────────────
   Future<void> saveAsDraft() async {
     if (!hasPending || isSaving.value) return;
+    final moment = await PhotoMomentDialog.show(
+      photoCount: pending.values.fold(0, (sum, list) => sum + list.length),
+    );
+    if (moment == null || isClosed) return;
     try {
       isSaving.value = true;
       var total = 0;
@@ -203,6 +208,10 @@ class ManageDayPhotosController extends GetxController {
           day: dayNumber,
           category: category,
           files: files.toList(),
+          title: moment.title,
+          quote: moment.quote,
+          lat: moment.location?.lat,
+          lng: moment.location?.lng,
         );
         if (response.success != true) {
           globalSnackBar(

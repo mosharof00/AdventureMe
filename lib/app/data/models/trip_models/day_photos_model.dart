@@ -4,21 +4,31 @@ class TripPhoto {
   final String? id;
   final String? category;
   final String? caption;
+  final String? title;
+  final String? quote;
+  final double? lat;
+  final double? lng;
   final int? displayOrder;
   final bool isDraft;
   final String? url;
   final String? displayUrl;
   final String? thumbnailUrl;
+  final DateTime? createdAt;
 
   TripPhoto({
     this.id,
     this.category,
     this.caption,
+    this.title,
+    this.quote,
+    this.lat,
+    this.lng,
     this.displayOrder,
     this.isDraft = false,
     this.url,
     this.displayUrl,
     this.thumbnailUrl,
+    this.createdAt,
   });
 
   /// Smallest available image, for grids.
@@ -28,11 +38,38 @@ class TripPhoto {
         id: json['id']?.toString(),
         category: json['category'],
         caption: json['caption'],
+        title: json['title'],
+        quote: json['quote'],
+        lat: (json['lat'] as num?)?.toDouble(),
+        lng: (json['lng'] as num?)?.toDouble(),
         displayOrder: (json['display_order'] as num?)?.toInt(),
         isDraft: json['is_draft'] == true,
         url: json['url'],
         displayUrl: json['display_url'],
         thumbnailUrl: json['thumbnail_url'],
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+      );
+}
+
+/// A group of a day's photos with its title/quote (Photo Chapter block).
+class PhotoSection {
+  final String? uploadDate;
+  final String? title;
+  final String? quote;
+  final List<TripPhoto> photos;
+
+  PhotoSection({
+    this.uploadDate,
+    this.title,
+    this.quote,
+    this.photos = const [],
+  });
+
+  factory PhotoSection.fromJson(Map<String, dynamic> json) => PhotoSection(
+        uploadDate: json['upload_date']?.toString(),
+        title: json['title'],
+        quote: json['quote'],
+        photos: _photos(json['photos']),
       );
 }
 
@@ -43,6 +80,8 @@ class DayPhotosResponse {
   final int? dayNumber;
   final bool isFinalized;
   final DateTime? finalizedAt;
+  final int totalPhotos;
+  final List<PhotoSection> sections;
   final Map<PhotoCategory, List<TripPhoto>> categories;
 
   DayPhotosResponse({
@@ -51,6 +90,8 @@ class DayPhotosResponse {
     this.dayNumber,
     this.isFinalized = false,
     this.finalizedAt,
+    this.totalPhotos = 0,
+    this.sections = const [],
     this.categories = const {},
   });
 
@@ -58,9 +99,16 @@ class DayPhotosResponse {
     final data = json['data'] is Map<String, dynamic>
         ? json['data'] as Map<String, dynamic>
         : const <String, dynamic>{};
+    final sections = (data['sections'] as List? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(PhotoSection.fromJson)
+        .toList();
+
+    // Older payloads group by `categories`; newer ones only by `sections`.
     final rawCategories = data['categories'] is Map
         ? data['categories'] as Map
-        : const {};
+        : null;
+    final allPhotos = [for (final s in sections) ...s.photos];
 
     return DayPhotosResponse(
       success: json['success'],
@@ -68,9 +116,20 @@ class DayPhotosResponse {
       dayNumber: (data['day_number'] as num?)?.toInt(),
       isFinalized: data['is_finalized'] == true,
       finalizedAt: DateTime.tryParse(data['finalized_at']?.toString() ?? ''),
+      totalPhotos: (data['total_photos'] as num?)?.toInt() ?? allPhotos.length,
+      sections: sections,
       categories: {
         for (final category in PhotoCategory.values)
-          category: _photos(rawCategories[category.apiValue]),
+          category: rawCategories != null
+              ? _photos(rawCategories[category.apiValue])
+              : (allPhotos
+                    .where((p) => p.category == category.apiValue)
+                    .toList()
+                  ..sort(
+                    (a, b) => (a.displayOrder ?? 0).compareTo(
+                      b.displayOrder ?? 0,
+                    ),
+                  )),
       },
     );
   }

@@ -79,11 +79,16 @@ abstract class ITripRepository {
   Future<DayPhotosResponse> getDayPhotos(String tripId, int day);
 
   /// Uploads [files] into one [category] of a day, as drafts.
+  /// [title], [quote] and the location are optional context for the moment.
   Future<PhotosActionResponse> uploadDayPhotos({
     required String tripId,
     required int day,
     required PhotoCategory category,
     required List<File> files,
+    String? title,
+    String? quote,
+    double? lat,
+    double? lng,
   });
 
   /// Publishes all draft photos of the day.
@@ -359,10 +364,17 @@ class TripRepository implements ITripRepository {
     required int day,
     required PhotoCategory category,
     required List<File> files,
+    String? title,
+    String? quote,
+    double? lat,
+    double? lng,
   }) async {
     final formData = FormData.fromMap({
       'category': category.apiValue,
       'is_draft': 'true',
+      if (title != null && title.isNotEmpty) 'title': title,
+      if (quote != null && quote.isNotEmpty) 'quote': quote,
+      if (lat != null && lng != null) ...{'lat': '$lat', 'lng': '$lng'},
     });
     for (final file in files) {
       formData.files.add(MapEntry('photos', await _imagePart(file)));

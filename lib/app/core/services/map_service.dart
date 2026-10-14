@@ -8,6 +8,8 @@ import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../data/models/picked_location.dart';
+
 /// Google-Maps helpers shared by the map screens. Permissions live in
 /// `PermissionService`.
 class MapService extends GetxService {
@@ -50,6 +52,25 @@ class MapService extends GetxService {
       return parts.isEmpty ? null : parts.join(', ');
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Places matching [query] via the OS geocoder, with readable addresses.
+  Future<List<PickedLocation>> searchPlaces(String query, {int limit = 5}) async {
+    final text = query.trim();
+    if (text.length < 2) return const [];
+    try {
+      final locations = await _geocoding.locationFromAddress(text);
+      return [
+        for (final l in locations.take(limit))
+          PickedLocation(
+            lat: l.latitude,
+            lng: l.longitude,
+            address: await addressFrom(l.latitude, l.longitude) ?? text,
+          ),
+      ];
+    } catch (_) {
+      return const [];
     }
   }
 
