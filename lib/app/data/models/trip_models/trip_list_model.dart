@@ -48,7 +48,9 @@ class TripListItem {
   final String? id;
   final String? title;
   final String? startingPlace;
+  final String? startingCountry;
   final String? destinedPlace;
+  final String? destinedCountry;
   final DateTime? startingDate;
   final DateTime? endingDate;
   final TripStatus status;
@@ -61,7 +63,9 @@ class TripListItem {
     this.id,
     this.title,
     this.startingPlace,
+    this.startingCountry,
     this.destinedPlace,
+    this.destinedCountry,
     this.startingDate,
     this.endingDate,
     this.status = TripStatus.pending,
@@ -75,11 +79,17 @@ class TripListItem {
 
   bool get hasCover => coverUrl != null && coverUrl!.isNotEmpty;
 
-  TripListItem copyWith({String? coverUrl}) => TripListItem(
+  TripListItem copyWith({
+    String? coverUrl,
+    String? startingCountry,
+    String? destinedCountry,
+  }) => TripListItem(
         id: id,
         title: title,
         startingPlace: startingPlace,
+        startingCountry: startingCountry ?? this.startingCountry,
         destinedPlace: destinedPlace,
+        destinedCountry: destinedCountry ?? this.destinedCountry,
         startingDate: startingDate,
         endingDate: endingDate,
         status: status,
@@ -93,7 +103,9 @@ class TripListItem {
         id: json['id']?.toString(),
         title: json['title'],
         startingPlace: json['starting_place'],
+        startingCountry: json['starting_country'],
         destinedPlace: json['destined_place'],
+        destinedCountry: json['destined_country'],
         startingDate: DateTime.tryParse(json['starting_date']?.toString() ?? ''),
         endingDate: DateTime.tryParse(json['ending_date']?.toString() ?? ''),
         status: TripStatus.fromApi(json['status']?.toString()),

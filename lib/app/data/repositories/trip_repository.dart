@@ -12,6 +12,7 @@ import 'package:adventureme/app/data/models/trip_models/trip_memory_model.dart';
 import 'package:adventureme/app/data/models/trip_models/story_status_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_prompt_model.dart';
+import 'package:adventureme/app/data/models/trip_models/visited_countries_model.dart';
 
 abstract class ITripRepository {
   /// Cursor-paginated; pass the previous page's cursor to get the next page.
@@ -25,7 +26,9 @@ abstract class ITripRepository {
   Future<TripResponse> createTrip({
     required String title,
     required String startingPlace,
+    String? startingCountry,
     required String destinedPlace,
+    String? destinedCountry,
     required DateTime startingDate,
     required DateTime endingDate,
     required bool travelTrackerEnabled,
@@ -37,7 +40,9 @@ abstract class ITripRepository {
     required String tripId,
     required String title,
     required String startingPlace,
+    String? startingCountry,
     required String destinedPlace,
+    String? destinedCountry,
     required DateTime startingDate,
     required DateTime endingDate,
     required bool travelTrackerEnabled,
@@ -132,6 +137,8 @@ abstract class ITripRepository {
     Map<String, String> answers, {
     bool skipRemaining = true,
   });
+
+  Future<VisitedCountriesResponse> getVisitedCountries();
 }
 
 class TripRepository implements ITripRepository {
@@ -167,7 +174,9 @@ class TripRepository implements ITripRepository {
   Future<TripResponse> createTrip({
     required String title,
     required String startingPlace,
+    String? startingCountry,
     required String destinedPlace,
+    String? destinedCountry,
     required DateTime startingDate,
     required DateTime endingDate,
     required bool travelTrackerEnabled,
@@ -180,7 +189,9 @@ class TripRepository implements ITripRepository {
         data: _tripBody(
           title: title,
           startingPlace: startingPlace,
+          startingCountry: startingCountry,
           destinedPlace: destinedPlace,
+          destinedCountry: destinedCountry,
           startingDate: startingDate,
           endingDate: endingDate,
           travelTrackerEnabled: travelTrackerEnabled,
@@ -198,7 +209,9 @@ class TripRepository implements ITripRepository {
     required String tripId,
     required String title,
     required String startingPlace,
+    String? startingCountry,
     required String destinedPlace,
+    String? destinedCountry,
     required DateTime startingDate,
     required DateTime endingDate,
     required bool travelTrackerEnabled,
@@ -211,7 +224,9 @@ class TripRepository implements ITripRepository {
         data: _tripBody(
           title: title,
           startingPlace: startingPlace,
+          startingCountry: startingCountry,
           destinedPlace: destinedPlace,
+          destinedCountry: destinedCountry,
           startingDate: startingDate,
           endingDate: endingDate,
           travelTrackerEnabled: travelTrackerEnabled,
@@ -221,6 +236,15 @@ class TripRepository implements ITripRepository {
       ),
       (dynamic data) => TripResponse.fromJson(data),
       'Update Trip',
+    );
+  }
+
+  @override
+  Future<VisitedCountriesResponse> getVisitedCountries() {
+    return _client.handleRequest(
+      () => _client.dio.get(ApiEndpoint.visitedCountries),
+      (dynamic data) => VisitedCountriesResponse.fromJson(data),
+      'Get Visited Countries',
     );
   }
 
@@ -236,7 +260,9 @@ class TripRepository implements ITripRepository {
   Map<String, dynamic> _tripBody({
     required String title,
     required String startingPlace,
+    String? startingCountry,
     required String destinedPlace,
+    String? destinedCountry,
     required DateTime startingDate,
     required DateTime endingDate,
     required bool travelTrackerEnabled,
@@ -245,7 +271,11 @@ class TripRepository implements ITripRepository {
   }) => {
     'title': title,
     'starting_place': startingPlace,
+    if (startingCountry != null && startingCountry.isNotEmpty)
+      'starting_country': startingCountry,
     'destined_place': destinedPlace,
+    if (destinedCountry != null && destinedCountry.isNotEmpty)
+      'destined_country': destinedCountry,
     'starting_date': _apiDate.format(startingDate),
     'ending_date': _apiDate.format(endingDate),
     'travel_tracker_enabled': travelTrackerEnabled,

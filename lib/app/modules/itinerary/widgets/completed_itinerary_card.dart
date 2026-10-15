@@ -87,7 +87,7 @@ class CompletedItineraryCard extends GetView<ItineraryController> {
                           5.width,
                           Flexible(
                             child: AppText(
-                              '${trip.destinedPlace ?? '--'}  -  ${controller.dateRange(trip)}',
+                              '${controller.destination(trip)}  -  ${controller.dateRange(trip)}',
                               style: context.labelSmall.copyWith(
                                 color: AppColor.white,
                               ),

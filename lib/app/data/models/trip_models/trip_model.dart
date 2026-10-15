@@ -47,7 +47,9 @@ class TripData {
   final String? id;
   final String? title;
   final String? startingPlace;
+  final String? startingCountry;
   final String? destinedPlace;
+  final String? destinedCountry;
   final DateTime? startingDate;
   final DateTime? endingDate;
   final int? numberOfDays;
@@ -80,7 +82,9 @@ class TripData {
     this.id,
     this.title,
     this.startingPlace,
+    this.startingCountry,
     this.destinedPlace,
+    this.destinedCountry,
     this.startingDate,
     this.endingDate,
     this.numberOfDays,
@@ -120,7 +124,9 @@ class TripData {
     id: json['id'],
     title: json['title'],
     startingPlace: json['starting_place'],
+    startingCountry: json['starting_country'],
     destinedPlace: json['destined_place'],
+    destinedCountry: json['destined_country'],
     startingDate: _date(json['starting_date']),
     endingDate: _date(json['ending_date']),
     numberOfDays: (json['number_of_days'] as num?)?.toInt(),
@@ -162,7 +168,9 @@ class TripData {
     id: id,
     title: title,
     startingPlace: startingPlace,
+    startingCountry: startingCountry,
     destinedPlace: destinedPlace,
+    destinedCountry: destinedCountry,
     startingDate: startingDate,
     endingDate: endingDate,
     numberOfDays: numberOfDays,

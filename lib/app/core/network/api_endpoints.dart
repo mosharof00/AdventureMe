@@ -45,6 +45,7 @@ class ApiEndpoint {
 
   ///  Trips
   static const String trips = '$baseUrl/trips'; // post: create
+  static const String visitedCountries = '$trips/visited-countries'; // get
   static String tripDetails(String tripId) =>
       '$trips/$tripId'; // get, patch: update, delete: cancel
   static String startTrip(String tripId) => '$trips/$tripId/start'; // post

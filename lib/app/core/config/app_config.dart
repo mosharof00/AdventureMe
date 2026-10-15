@@ -7,7 +7,7 @@ class AppConfig {
   static String appName = "AdventuresMe";
   static const domainUrl =
   // "https://api.adventuresme.com";
-      "https://extreme-districts-lyrics-coral.trycloudflare.com";
+      "https://judicial-area-waves-matt.trycloudflare.com";
 
   /// ProjectID
 

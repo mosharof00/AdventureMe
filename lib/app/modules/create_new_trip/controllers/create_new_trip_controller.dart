@@ -1,4 +1,6 @@
+import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:adventureme/app/core/network/handle_exceptions.dart';
@@ -29,7 +31,9 @@ class CreateNewTripController extends GetxController {
   final detailsFormKey = GlobalKey<FormState>();
   final titleController = TextEditingController();
   final startingPlaceController = TextEditingController();
+  final startingCountryController = TextEditingController();
   final destinedPlaceController = TextEditingController();
+  final destinedCountryController = TextEditingController();
   final startDateController = TextEditingController();
   final endDateController = TextEditingController();
   final Rxn<DateTime> startDate = Rxn<DateTime>();
@@ -67,7 +71,9 @@ class CreateNewTripController extends GetxController {
     editingTrip = trip;
     titleController.text = trip.title ?? '';
     startingPlaceController.text = trip.startingPlace ?? '';
+    startingCountryController.text = trip.startingCountry ?? '';
     destinedPlaceController.text = trip.destinedPlace ?? '';
+    destinedCountryController.text = trip.destinedCountry ?? '';
     final start = _dateOnly(trip.startingDate);
     final end = _dateOnly(trip.endingDate);
     if (start != null) {
@@ -94,8 +100,14 @@ class CreateNewTripController extends GetxController {
   String? validateStartingPlace(String? value) =>
       (value?.trim().isEmpty ?? true) ? 'Starting place is required' : null;
 
+  String? validateStartingCountry(String? value) =>
+      (value?.trim().isEmpty ?? true) ? 'Starting country is required' : null;
+
   String? validateDestinedPlace(String? value) =>
       (value?.trim().isEmpty ?? true) ? 'Destined place is required' : null;
+
+  String? validateDestinedCountry(String? value) =>
+      (value?.trim().isEmpty ?? true) ? 'Destined country is required' : null;
 
   String? validateStartDate(String? _) =>
       startDate.value == null ? 'Select a start date' : null;
@@ -106,6 +118,81 @@ class CreateNewTripController extends GetxController {
     if (end == null) return 'Select an end date';
     if (start != null && end.isBefore(start)) return 'Must be after start';
     return null;
+  }
+
+  // ── Country pickers ──────────────────────────────────
+  void pickStartingCountry(BuildContext context) {
+    showCountryPicker(
+      context: context,
+      showPhoneCode: false,
+      countryListTheme: CountryListThemeData(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        bottomSheetHeight: 520.h,
+        backgroundColor: Colors.white,
+        textStyle: TextStyle(fontSize: 14.sp, color: Colors.black87),
+        searchTextStyle: TextStyle(fontSize: 14.sp, color: Colors.black87),
+        inputDecoration: InputDecoration(
+          hintText: 'Search country...',
+          prefixIcon: const Icon(Icons.search, color: AppColor.hintText),
+          filled: true,
+          fillColor: const Color(0xFFFFFCF8),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.r),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.r),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.r),
+            borderSide: const BorderSide(color: AppColor.primary, width: 1.2),
+          ),
+        ),
+      ),
+      onSelect: (Country country) {
+        startingCountryController.text = country.name;
+        if (_detailsValidated) detailsFormKey.currentState?.validate();
+      },
+    );
+  }
+
+  void pickDestinedCountry(BuildContext context) {
+    showCountryPicker(
+      context: context,
+      showPhoneCode: false,
+      countryListTheme: CountryListThemeData(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        bottomSheetHeight: 520.h,
+        backgroundColor: Colors.white,
+        textStyle: TextStyle(fontSize: 14.sp, color: Colors.black87),
+        searchTextStyle: TextStyle(fontSize: 14.sp, color: Colors.black87),
+        inputDecoration: InputDecoration(
+          hintText: 'Search country...',
+          prefixIcon: const Icon(Icons.search, color: AppColor.hintText),
+          filled: true,
+          fillColor: const Color(0xFFFFFCF8),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.r),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.r),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.r),
+            borderSide: const BorderSide(color: AppColor.primary, width: 1.2),
+          ),
+        ),
+      ),
+      onSelect: (Country country) {
+        destinedCountryController.text = country.name;
+        if (_detailsValidated) detailsFormKey.currentState?.validate();
+      },
+    );
   }
 
   // ── Date pickers ─────────────────────────────────────
@@ -192,7 +279,9 @@ class CreateNewTripController extends GetxController {
       final response = await _tripRepository.createTrip(
         title: titleController.text.trim(),
         startingPlace: startingPlaceController.text.trim(),
+        startingCountry: startingCountryController.text.trim(),
         destinedPlace: destinedPlaceController.text.trim(),
+        destinedCountry: destinedCountryController.text.trim(),
         startingDate: startDate.value!,
         endingDate: endDate.value!,
         travelTrackerEnabled: travelTracker.value,
@@ -227,7 +316,9 @@ class CreateNewTripController extends GetxController {
         tripId: tripId,
         title: titleController.text.trim(),
         startingPlace: startingPlaceController.text.trim(),
+        startingCountry: startingCountryController.text.trim(),
         destinedPlace: destinedPlaceController.text.trim(),
+        destinedCountry: destinedCountryController.text.trim(),
         startingDate: startDate.value!,
         endingDate: endDate.value!,
         travelTrackerEnabled: travelTracker.value,
@@ -277,7 +368,9 @@ class CreateNewTripController extends GetxController {
   void onClose() {
     titleController.dispose();
     startingPlaceController.dispose();
+    startingCountryController.dispose();
     destinedPlaceController.dispose();
+    destinedCountryController.dispose();
     startDateController.dispose();
     endDateController.dispose();
     super.onClose();

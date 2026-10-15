@@ -163,58 +163,60 @@ class _StatsCard extends GetView<ItineraryController> {
             borderRadius: BorderRadius.circular(20.r),
             border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText(
-                      '${controller.countriesVisited}',
-                      style: context.displayLarge.copyWith(
-                        color: AppColor.white,
-                        fontWeight: FontWeight.w700,
+          child: Obx(
+            () => Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText(
+                        '${controller.countriesVisited}',
+                        style: context.displayLarge.copyWith(
+                          color: AppColor.white,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    4.height,
-                    AppText(
-                      'Countries visited out of ${controller.totalCountries}',
-                      style: context.bodySmall.copyWith(
-                        color: AppColor.white.withValues(alpha: 0.9),
+                      4.height,
+                      AppText(
+                        'Countries visited out of ${controller.totalCountries}',
+                        style: context.bodySmall.copyWith(
+                          color: AppColor.white.withValues(alpha: 0.9),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              CircularPercentIndicator(
-                radius: 45.r,
-                lineWidth: 10.w,
-                percent: controller.worldPercent.clamp(0.0, 1.0),
-                animation: true,
-                circularStrokeCap: CircularStrokeCap.round,
-                backgroundColor: AppColor.white.withValues(alpha: 0.35),
-                progressColor: AppColor.secondary,
-                center: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppText(
-                      '${controller.worldPercentLabel}%',
-                      style: context.titleMedium.copyWith(
-                        color: AppColor.white,
-                        fontWeight: FontWeight.w700,
+                CircularPercentIndicator(
+                  radius: 45.r,
+                  lineWidth: 10.w,
+                  percent: controller.worldPercent,
+                  animation: true,
+                  circularStrokeCap: CircularStrokeCap.round,
+                  backgroundColor: AppColor.white.withValues(alpha: 0.35),
+                  progressColor: AppColor.secondary,
+                  center: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppText(
+                        '${controller.worldPercentLabel}%',
+                        style: context.titleMedium.copyWith(
+                          color: AppColor.white,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    AppText(
-                      'WORLD',
-                      style: context.labelSmall.copyWith(
-                        color: AppColor.white.withValues(alpha: 0.8),
-                        fontSize: 9.sp,
+                      AppText(
+                        'WORLD',
+                        style: context.labelSmall.copyWith(
+                          color: AppColor.white.withValues(alpha: 0.8),
+                          fontSize: 9.sp,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

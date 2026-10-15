@@ -212,6 +212,8 @@ class ItineraryDetailsController extends GetxController
   String get tripRoute => ItineraryController.formatRoute(
     trip.value?.startingPlace ?? _preview?.startingPlace,
     trip.value?.destinedPlace ?? _preview?.destinedPlace,
+    startingCountry: trip.value?.startingCountry ?? _preview?.startingCountry,
+    destinedCountry: trip.value?.destinedCountry ?? _preview?.destinedCountry,
   );
 
   String get tripDates => ItineraryController.formatDateRange(

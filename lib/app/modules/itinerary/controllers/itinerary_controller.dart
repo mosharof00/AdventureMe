@@ -10,6 +10,7 @@ import 'package:adventureme/app/core/network/handle_exceptions.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/core/utils/image_picker_helper.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
+import 'package:adventureme/app/data/models/trip_models/visited_countries_model.dart';
 import 'package:adventureme/app/data/repositories/trip_repository.dart';
 import 'package:adventureme/app/global/widgets/global_snackbar.dart';
 import 'package:adventureme/app/modules/itinerary/widgets/trip_thumbnail_dialog.dart';
@@ -53,12 +54,36 @@ class ItineraryController extends GetxController
   String _search = '';
   Timer? _searchDebounce;
 
-  // ── Stats (no API yet) ───────────────────────────────
-  final countriesVisited = 32;
-  final totalCountries = 195;
+  // ── Stats (from /trips/visited-countries) ───────────
+  final visitedCountries = Rxn<VisitedCountriesData>();
+  final isLoadingVisitedCountries = false.obs;
 
-  double get worldPercent => countriesVisited / totalCountries;
-  int get worldPercentLabel => (worldPercent * 100).round();
+  int get countriesVisited =>
+      visitedCountries.value?.totalVisitedCountries ?? 0;
+  int get totalCountries =>
+      visitedCountries.value?.totalWorldCountries ?? 195;
+  double get worldPercent {
+    final pct = visitedCountries.value?.worldPercentage;
+    if (pct != null) return (pct / 100.0).clamp(0.0, 1.0);
+    return totalCountries > 0 ? ((countriesVisited / totalCountries).clamp(0.0, 1.0)) : 0.0;
+  }
+  int get worldPercentLabel =>
+      visitedCountries.value?.worldPercentageRounded ??
+      (worldPercent * 100).round();
+
+  Future<void> fetchVisitedCountries() async {
+    try {
+      isLoadingVisitedCountries.value = true;
+      final response = await _tripRepository.getVisitedCountries();
+      if (response.success == true && response.data != null) {
+        visitedCountries.value = response.data;
+      }
+    } catch (e) {
+      handleException(e, context: 'Visited Countries');
+    } finally {
+      isLoadingVisitedCountries.value = false;
+    }
+  }
 
   @override
   void onInit() {
@@ -66,6 +91,7 @@ class ItineraryController extends GetxController
     tabController = TabController(length: ItineraryTab.values.length, vsync: this)
       ..addListener(_onTabChanged);
     _loadIfNeeded(selectedTab.value);
+    fetchVisitedCountries();
   }
 
   TripTabState stateOf(ItineraryTab tab) => tabs[tab]!;
@@ -113,8 +139,11 @@ class ItineraryController extends GetxController
     refreshTab(selectedTab.value);
   }
 
-  /// Reloads every tab (e.g. after a trip was created).
-  void refreshAll() => _resetAll();
+  /// Reloads every tab and refreshes visited countries (e.g. after a trip was created/updated).
+  void refreshAll() {
+    _resetAll();
+    fetchVisitedCountries();
+  }
 
   // ── Loading ──────────────────────────────────────────
   Future<void> refreshTab(ItineraryTab tab) async {
@@ -204,11 +233,34 @@ class ItineraryController extends GetxController
     return '$startText to ${_dayMonthYear.format(end)}';
   }
 
-  String route(TripListItem trip) =>
-      formatRoute(trip.startingPlace, trip.destinedPlace);
+  String route(TripListItem trip) => formatRoute(
+        trip.startingPlace,
+        trip.destinedPlace,
+        startingCountry: trip.startingCountry,
+        destinedCountry: trip.destinedCountry,
+      );
 
-  static String formatRoute(String? starting, String? destined) =>
-      'Starting: ${starting ?? '--'} | Destined: ${destined ?? '--'}';
+  String destination(TripListItem trip) {
+    final dest = [trip.destinedPlace, trip.destinedCountry]
+        .where((e) => e != null && e.trim().isNotEmpty)
+        .join(', ');
+    return dest.isEmpty ? '--' : dest;
+  }
+
+  static String formatRoute(
+    String? starting,
+    String? destined, {
+    String? startingCountry,
+    String? destinedCountry,
+  }) {
+    final start = [starting, startingCountry]
+        .where((e) => e != null && e.trim().isNotEmpty)
+        .join(', ');
+    final dest = [destined, destinedCountry]
+        .where((e) => e != null && e.trim().isNotEmpty)
+        .join(', ');
+    return 'Starting: ${start.isEmpty ? '--' : start} | Destined: ${dest.isEmpty ? '--' : dest}';
+  }
 
   // ── Actions ──────────────────────────────────────────
   void onViewDetails(TripListItem trip) =>
