@@ -126,7 +126,6 @@ enum ItineraryTab {
   all('All', null),
   pending('Pending', TripStatus.pending),
   ongoing('Active', TripStatus.active),
-  paused('Paused', TripStatus.paused),
   completed('Completed', TripStatus.completed),
   cancelled('Cancelled', TripStatus.cancelled);
 

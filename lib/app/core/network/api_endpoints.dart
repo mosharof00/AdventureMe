@@ -54,6 +54,7 @@ class ApiEndpoint {
       '$trips/$tripId/story/generate'; // post
   static String storyStatus(String tripId) =>
       '$trips/$tripId/story/status'; // get
+  static String tripStory(String tripId) => '$trips/$tripId/story'; // get
   static String tripReflection(String tripId) =>
       '$trips/$tripId/reflection'; // post
   static String tripIntention(String tripId) =>

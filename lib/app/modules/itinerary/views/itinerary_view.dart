@@ -26,29 +26,21 @@ class ItineraryView extends GetView<ItineraryController> {
       width: double.infinity,
       height: double.infinity,
       decoration: const BoxDecoration(gradient: AppGradient.appBgGradient),
-      // Pull-down overscroll lands on the outer scroll of a NestedScrollView,
-      // so the indicator lives here and refreshes the visible tab.
-      child: RefreshIndicator(
-        color: AppColor.primary,
-        edgeOffset: statusBar,
-        notificationPredicate: (notification) => notification.depth == 0,
-        onRefresh: () => controller.refreshTab(controller.selectedTab.value),
-        child: NestedScrollView(
-          headerSliverBuilder: (context, _) => [
-            SliverOverlapAbsorber(
-              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-              sliver: SliverPersistentHeader(
-                pinned: true,
-                delegate: _ItineraryHeaderDelegate(statusBar: statusBar),
-              ),
+      child: NestedScrollView(
+        headerSliverBuilder: (context, _) => [
+          SliverOverlapAbsorber(
+            handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+            sliver: SliverPersistentHeader(
+              pinned: true,
+              delegate: _ItineraryHeaderDelegate(statusBar: statusBar),
             ),
-          ],
-          body: TabBarView(
-            controller: controller.tabController,
-            children: [
-              for (final tab in ItineraryTab.values) _TripTabList(tab: tab),
-            ],
           ),
+        ],
+        body: TabBarView(
+          controller: controller.tabController,
+          children: [
+            for (final tab in ItineraryTab.values) _TripTabList(tab: tab),
+          ],
         ),
       ),
     );
@@ -126,8 +118,10 @@ class _TripTabList extends GetView<ItineraryController> {
   Widget build(BuildContext context) {
     final state = controller.stateOf(tab);
 
-    return Builder(
-      builder: (context) => NotificationListener<ScrollNotification>(
+    return RefreshIndicator(
+      color: AppColor.primary,
+      onRefresh: () => controller.refreshTabWithStats(tab),
+      child: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
           if (notification.depth == 0 &&
               notification.metrics.axis == Axis.vertical &&

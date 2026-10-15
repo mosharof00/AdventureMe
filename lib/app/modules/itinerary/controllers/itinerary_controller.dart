@@ -10,11 +10,15 @@ import 'package:adventureme/app/core/network/handle_exceptions.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/core/utils/image_picker_helper.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_list_model.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
 import 'package:adventureme/app/data/models/trip_models/visited_countries_model.dart';
 import 'package:adventureme/app/data/repositories/trip_repository.dart';
+import 'package:adventureme/app/global/widgets/app_bottom_sheet.dart';
+import 'package:adventureme/app/global/widgets/global_button.dart';
 import 'package:adventureme/app/global/widgets/global_snackbar.dart';
 import 'package:adventureme/app/modules/itinerary/widgets/trip_thumbnail_dialog.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
+import 'package:adventureme/gen/assets.gen.dart';
 
 /// List + cursor-pagination state of one tab.
 class TripTabState {
@@ -145,6 +149,14 @@ class ItineraryController extends GetxController
     fetchVisitedCountries();
   }
 
+  /// Pull-to-refresh on any tab: refreshes the tab data and the header stats.
+  Future<void> refreshTabWithStats(ItineraryTab tab) async {
+    await Future.wait([
+      refreshTab(tab),
+      fetchVisitedCountries(),
+    ]);
+  }
+
   // ── Loading ──────────────────────────────────────────
   Future<void> refreshTab(ItineraryTab tab) async {
     final state = stateOf(tab);
@@ -263,8 +275,86 @@ class ItineraryController extends GetxController
   }
 
   // ── Actions ──────────────────────────────────────────
-  void onViewDetails(TripListItem trip) =>
-      Get.toNamed(Routes.ITINERARY_DETAILS, arguments: trip);
+  Future<void> onViewDetails(TripListItem trip) async {
+    await Get.toNamed(Routes.ITINERARY_DETAILS, arguments: trip);
+    refreshAll();
+  }
+
+  Future<void> onEditTrip(TripListItem trip) async {
+    final id = trip.id;
+    if (id == null) return;
+    try {
+      final details = await _tripRepository.getTripDetails(id);
+      if (details.data != null) {
+        final result = await Get.toNamed(
+          Routes.CREATE_NEW_TRIP,
+          arguments: details.data,
+        );
+        if (result is TripResponse) {
+          refreshAll();
+        }
+      }
+    } catch (e) {
+      handleException(e, context: 'Edit Trip');
+    }
+  }
+
+  Future<void> confirmDeleteTrip(TripListItem trip) async {
+    final id = trip.id;
+    if (id == null) return;
+
+    AppBottomSheet.show(
+      sticker: Assets.images.crySticker.path,
+      title: 'Are You Sure You Want to Delete?',
+      description:
+          'Deleting your trip "${trip.title ?? 'Untitled Trip'}" will permanently remove all trip data.',
+      actionWidget: Row(
+        children: [
+          Expanded(
+            child: GlobalButton(
+              text: 'Keep',
+              color: AppColor.primaryDisable,
+              textColor: AppColor.primary,
+              onTap: () => Get.back(),
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: GlobalButton(
+              text: 'Delete Trip',
+              color: AppColor.error,
+              onTap: () async {
+                Get.back(); // close bottom sheet
+                await _executeDeleteTrip(id);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeDeleteTrip(String tripId) async {
+    try {
+      final response = await _tripRepository.deleteTrip(tripId);
+      if (response.success == true) {
+        refreshAll();
+        globalSnackBar(
+          title: 'Trip Deleted',
+          message: response.message ?? 'Trip removed.',
+          backgroundColor: AppColor.primary,
+        );
+      } else {
+        globalSnackBar(
+          title: 'Unable to Delete',
+          message: response.message ?? 'Unable to delete the trip.',
+        );
+      }
+    } catch (e) {
+      handleException(e, context: 'Delete Trip');
+    }
+  }
+
   void onShare(TripListItem trip) {}
   void onScan(TripListItem trip) {}
   void onNotifications() => Get.toNamed(Routes.NOTIFICATIONS);

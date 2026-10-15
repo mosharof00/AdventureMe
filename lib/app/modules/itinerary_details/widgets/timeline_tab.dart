@@ -68,6 +68,7 @@ class _ActionButtons extends GetView<ItineraryDetailsController> {
   @override
   Widget build(BuildContext context) {
     final canGenerate = controller.isCompleted;
+    final hasStory = controller.hasStory;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
@@ -88,19 +89,33 @@ class _ActionButtons extends GetView<ItineraryDetailsController> {
           ],
           GlobalButton(text: 'View Map', onTap: controller.onViewMap),
           12.height,
-          GlobalButton(
-            text: '',
-            onTap: controller.onGenerateStory,
-            isDisabled: !canGenerate,
-            gradient: const LinearGradient(
-              colors: [AppColor.secondary, Color(0xFF8A7CFF)],
+          if (hasStory)
+            GlobalButton(
+              text: '',
+              onTap: controller.onViewAiStory,
+              gradient: const LinearGradient(
+                colors: [AppColor.secondary, Color(0xFF8A7CFF)],
+              ),
+              widget: _IconLabel(
+                icon: Icons.auto_awesome,
+                label: 'View AI Story',
+                color: AppColor.white,
+              ),
+            )
+          else
+            GlobalButton(
+              text: '',
+              onTap: controller.onGenerateStory,
+              isDisabled: !canGenerate,
+              gradient: const LinearGradient(
+                colors: [AppColor.secondary, Color(0xFF8A7CFF)],
+              ),
+              widget: _IconLabel(
+                icon: Icons.auto_awesome,
+                label: 'Generate Story',
+                color: canGenerate ? AppColor.white : AppColor.hintText,
+              ),
             ),
-            widget: _IconLabel(
-              icon: Icons.auto_awesome,
-              label: 'Generate Story',
-              color: canGenerate ? AppColor.white : AppColor.hintText,
-            ),
-          ),
         ],
       ),
     );

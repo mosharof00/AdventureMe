@@ -232,6 +232,7 @@ class ItineraryDetailsController extends GetxController
   bool get isActive => status.value == TripStatus.active;
   bool get isCompleted => status.value == TripStatus.completed;
   bool get isCancelled => status.value == TripStatus.cancelled;
+  bool get hasStory => trip.value?.storyCreatedAt != null;
 
   bool isDayDone(int index) => days[index].checkpoints.isNotEmpty;
 
@@ -749,9 +750,22 @@ class ItineraryDetailsController extends GetxController
       'canMarkCheckpoint': isOngoing || isCompleted,
     },
   );
-  void onGenerateStory() {
+  Future<void> onGenerateStory() async {
     final id = tripId;
-    if (isCompleted && id != null) StoryGeneratingDialog.show(id);
+    if (isCompleted && id != null) {
+      await StoryGeneratingDialog.show(id);
+      fetchDetails();
+    }
+  }
+
+  Future<void> onViewAiStory() async {
+    final id = tripId;
+    if (id == null) return;
+    await Get.toNamed(
+      Routes.GENERATE_STORY,
+      arguments: {'tripId': id},
+    );
+    fetchDetails();
   }
 
   Future<void> onManageDayPhotos(TrackingDay day) async {
@@ -779,7 +793,7 @@ class ItineraryDetailsController extends GetxController
 
   void onCancelTrip() {
     AppBottomSheet.show(
-      sticker: 'assets/images/cry_sticker.png',
+      sticker: Assets.images.crySticker.path,
       title: 'Are You Sure You Want to Delete?',
       description:
           'Deleting your trip will lose all the data from the beginning to the end.',
@@ -797,7 +811,7 @@ class ItineraryDetailsController extends GetxController
           Expanded(
             child: Obx(
               () => GlobalButton(
-                text: 'Cancel Trip',
+                text: 'Delete Trip',
                 color: AppColor.error,
                 onTap: confirmCancel,
                 widget: isCancelling.value
@@ -819,8 +833,8 @@ class ItineraryDetailsController extends GetxController
       final response = await _tripRepository.deleteTrip(id);
       if (response.success != true) {
         globalSnackBar(
-          title: 'Unable to Cancel',
-          message: response.message ?? 'Unable to cancel the trip.',
+          title: 'Unable to Delete',
+          message: response.message ?? 'Unable to delete the trip.',
         );
         return;
       }
@@ -830,12 +844,12 @@ class ItineraryDetailsController extends GetxController
       if (Get.isBottomSheetOpen == true) Get.back();
       _returnToList();
       globalSnackBar(
-        title: 'Trip Cancelled',
+        title: 'Trip Deleted',
         message: response.message ?? 'Trip removed.',
         backgroundColor: AppColor.primary,
       );
     } catch (e) {
-      handleException(e, context: 'Cancel Trip');
+      handleException(e, context: 'Delete Trip');
     } finally {
       isCancelling.value = false;
     }

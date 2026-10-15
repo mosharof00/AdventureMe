@@ -91,7 +91,10 @@ class ItineraryHeader extends GetView<ItineraryController> {
                 ),
                 8.width,
                 GestureDetector(
-                  onTap: () => Get.toNamed(Routes.CREATE_NEW_TRIP),
+                  onTap: () async {
+                    await Get.toNamed(Routes.CREATE_NEW_TRIP);
+                    controller.refreshAll();
+                  },
                   child: Container(
                     padding: EdgeInsets.all(6.r),
                     decoration: BoxDecoration(

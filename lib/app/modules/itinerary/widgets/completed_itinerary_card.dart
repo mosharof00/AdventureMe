@@ -147,6 +147,12 @@ class CompletedItineraryCard extends GetView<ItineraryController> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   _CircleAction(
+                    icon: Icons.delete_outline_rounded,
+                    iconColor: AppColor.error,
+                    onTap: () => controller.confirmDeleteTrip(trip),
+                  ),
+                  10.width,
+                  _CircleAction(
                     icon: Icons.share_outlined,
                     onTap: () => controller.onShare(trip),
                   ),
@@ -166,10 +172,15 @@ class CompletedItineraryCard extends GetView<ItineraryController> {
 }
 
 class _CircleAction extends StatelessWidget {
-  const _CircleAction({required this.icon, required this.onTap});
+  const _CircleAction({
+    required this.icon,
+    required this.onTap,
+    this.iconColor,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +193,7 @@ class _CircleAction extends StatelessWidget {
           color: AppColor.white,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18.sp, color: AppColor.primary),
+        child: Icon(icon, size: 18.sp, color: iconColor ?? AppColor.primary),
       ),
     );
   }

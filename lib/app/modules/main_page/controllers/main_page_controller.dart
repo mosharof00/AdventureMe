@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:adventureme/app/core/utils/dialog_utils.dart';
 import 'package:adventureme/app/modules/archive/views/archive_view.dart';
+import 'package:adventureme/app/modules/itinerary/controllers/itinerary_controller.dart';
 import 'package:adventureme/app/modules/itinerary/views/itinerary_view.dart';
 import 'package:get/get.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
@@ -22,7 +23,12 @@ class MainPageController extends GetxController {
     ProfileView(),
   ];
 
-  void changePage(int index) => selectedIndex.value = index;
+  void changePage(int index) {
+    selectedIndex.value = index;
+    if (index == 1 && Get.isRegistered<ItineraryController>()) {
+      Get.find<ItineraryController>().refreshAll();
+    }
+  }
 
   void openDrawer() => scaffoldKey.currentState?.openDrawer();
 

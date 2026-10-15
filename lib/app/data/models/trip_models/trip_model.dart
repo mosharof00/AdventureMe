@@ -73,6 +73,8 @@ class TripData {
   final List<String> intentionTags;
   final DateTime? anticipatedAt;
   final DateTime? reflectedAt;
+  final DateTime? storyCreatedAt;
+  final DateTime? storyPublishedAt;
   final String? userId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -106,6 +108,8 @@ class TripData {
     this.intentionTags = const [],
     this.anticipatedAt,
     this.reflectedAt,
+    this.storyCreatedAt,
+    this.storyPublishedAt,
     this.userId,
     this.createdAt,
     this.updatedAt,
@@ -119,6 +123,8 @@ class TripData {
   bool get hasIntention => intention != null && intention!.trim().isNotEmpty;
 
   bool get hasReflection => reflectedAt != null;
+
+  bool get hasStory => storyCreatedAt != null;
 
   factory TripData.fromJson(Map<String, dynamic> json) => TripData(
     id: json['id'],
@@ -149,6 +155,8 @@ class TripData {
     intentionTags: _strings(json['intention_tags']),
     anticipatedAt: _date(json['anticipated_at']),
     reflectedAt: _date(json['reflected_at']),
+    storyCreatedAt: _date(json['story_created_at']),
+    storyPublishedAt: _date(json['story_published_at']),
     userId: json['user_id'],
     createdAt: _date(json['created_at']),
     updatedAt: _date(json['updated_at']),
@@ -163,6 +171,8 @@ class TripData {
     String? intentionType,
     List<String>? intentionTags,
     DateTime? reflectedAt,
+    DateTime? storyCreatedAt,
+    DateTime? storyPublishedAt,
     List<TripInterval>? tripIntervals,
   }) => TripData(
     id: id,
@@ -192,6 +202,8 @@ class TripData {
     intentionTags: intentionTags ?? this.intentionTags,
     anticipatedAt: anticipatedAt,
     reflectedAt: reflectedAt ?? this.reflectedAt,
+    storyCreatedAt: storyCreatedAt ?? this.storyCreatedAt,
+    storyPublishedAt: storyPublishedAt ?? this.storyPublishedAt,
     userId: userId,
     createdAt: createdAt,
     updatedAt: updatedAt,

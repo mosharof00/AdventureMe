@@ -12,6 +12,7 @@ import 'package:adventureme/app/data/models/trip_models/trip_memory_model.dart';
 import 'package:adventureme/app/data/models/trip_models/story_status_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_prompt_model.dart';
+import 'package:adventureme/app/data/models/trip_models/trip_story_model.dart';
 import 'package:adventureme/app/data/models/trip_models/visited_countries_model.dart';
 
 abstract class ITripRepository {
@@ -58,10 +59,11 @@ abstract class ITripRepository {
 
   Future<TripResponse> endTrip(String tripId);
 
-  /// Starts a story job, or returns the recently generated one.
   Future<StoryStatusResponse> generateStory(String tripId);
 
   Future<StoryStatusResponse> getStoryStatus(String tripId);
+
+  Future<TripStoryResponse> getTripStory(String tripId);
 
   Future<TripReflectionResponse> saveReflection({
     required String tripId,
@@ -325,6 +327,15 @@ class TripRepository implements ITripRepository {
       () => _client.dio.get(ApiEndpoint.storyStatus(tripId)),
       (dynamic data) => StoryStatusResponse.fromJson(data),
       'Story Status',
+    );
+  }
+
+  @override
+  Future<TripStoryResponse> getTripStory(String tripId) {
+    return _client.handleRequest(
+      () => _client.dio.get(ApiEndpoint.tripStory(tripId)),
+      (dynamic data) => TripStoryResponse.fromJson(data),
+      'Get Trip Story',
     );
   }
 

@@ -70,6 +70,59 @@ class PendingItineraryCard extends GetView<ItineraryController> {
                     ),
                   ),
                 ),
+                4.width,
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    size: 18.sp,
+                    color: AppColor.hintText,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      controller.confirmDeleteTrip(trip);
+                    } else if (value == 'edit') {
+                      controller.onEditTrip(trip);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 18.sp,
+                            color: AppColor.primary,
+                          ),
+                          8.width,
+                          const Text('Edit Trip'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18.sp,
+                            color: AppColor.error,
+                          ),
+                          8.width,
+                          const Text(
+                            'Delete Trip',
+                            style: TextStyle(color: AppColor.error),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
             14.height,
