@@ -34,6 +34,10 @@ extension AppTextStyles on BuildContext {
   /// Poppins • 14sp • w500
   TextStyle get labelLarge => Theme.of(this).textTheme.labelLarge!;
 
+  /// Poppins • 12sp • w500
+  TextStyle get labelMedium =>
+      Theme.of(this).textTheme.labelMedium ?? Theme.of(this).textTheme.labelLarge!;
+
   /// Poppins • 11sp • w400
   TextStyle get labelSmall => Theme.of(this).textTheme.labelSmall!;
 }

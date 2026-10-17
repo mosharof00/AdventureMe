@@ -45,9 +45,9 @@ class _BottomNav extends GetView<MainPageController> {
       label: 'Itinerary',
     ),
     _NavTab(
-      outlineIcon: Assets.icons.blockIcon,
-      fillIcon: Assets.icons.blockFillIcon,
-      label: 'Archive',
+      outlineIcon: Assets.icons.feedIcon,
+      fillIcon: Assets.icons.feedFillIcon,
+      label: 'Feeds',
     ),
     _NavTab(
       outlineIcon: Assets.icons.userIcon,

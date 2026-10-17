@@ -15,8 +15,15 @@ import '../widgets/itinerary_header.dart';
 import '../widgets/itinerary_tabs.dart';
 import '../widgets/pending_itinerary_card.dart';
 
-class ItineraryView extends GetView<ItineraryController> {
+class ItineraryView extends StatelessWidget {
   const ItineraryView({super.key});
+
+  ItineraryController get controller {
+    if (!Get.isRegistered<ItineraryController>()) {
+      Get.lazyPut<ItineraryController>(() => ItineraryController(), fenix: true);
+    }
+    return Get.find<ItineraryController>();
+  }
 
   @override
   Widget build(BuildContext context) {

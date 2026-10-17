@@ -7,6 +7,7 @@ class ItineraryBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<ItineraryController>(
       () => ItineraryController(),
+      fenix: true,
     );
   }
 }

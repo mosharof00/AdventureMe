@@ -6,8 +6,6 @@ import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/global/widgets/app_scaffold.dart';
 import 'package:adventureme/app/global/widgets/app_text.dart';
-import 'package:adventureme/app/global/widgets/custom_icon_button.dart';
-import 'package:adventureme/app/global/widgets/custom_appbar.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
 
 import '../controllers/privacy_policy_controller.dart';

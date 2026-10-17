@@ -81,7 +81,20 @@ class ApiEndpoint {
   static const String profileDetails = '$baseUrl/profile/details'; // get
   static const String profileUpdate = '$baseUrl/profile/update'; // post
 
+  ///  Home
+  static const String home = '$baseUrl/home';
+  static String onThisDay(String date) => '$home/on-this-day?date=$date'; // get
+  static const String latestStory = '$home/latest-story'; // get
+  static const String currentItinerary = '$home/current-itinerary'; // get
+  static String upcomingItinerary({int limit = 10}) =>
+      '$home/upcoming-itinerary?limit=$limit'; // get
+
+  ///  Feed
+  static const String feed = '$baseUrl/feed'; // get
+
   ///  product
   static const String productList = 'https://dummyjson.com/products'; // get
   static const String productDetails = '$baseUrl/product/details'; // get
 }
+
+

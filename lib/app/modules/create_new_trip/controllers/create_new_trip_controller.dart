@@ -7,11 +7,10 @@ import 'package:adventureme/app/core/network/handle_exceptions.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
 import 'package:adventureme/app/data/models/trip_models/trip_model.dart';
 import 'package:adventureme/app/data/repositories/trip_repository.dart';
-import 'package:adventureme/app/core/utils/helper_utils.dart';
 import 'package:adventureme/app/global/widgets/app_bottom_sheet.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
 import 'package:adventureme/app/global/widgets/global_snackbar.dart';
-import 'package:adventureme/app/modules/itinerary/controllers/itinerary_controller.dart';
+import 'package:adventureme/app/modules/main_page/controllers/main_page_controller.dart';
 import 'package:adventureme/gen/assets.gen.dart';
 
 /// Pops with the created [TripData] as the route result so the opener can
@@ -361,22 +360,26 @@ class CreateNewTripController extends GetxController {
         onTap: () => Get.back(),
       ),
     );
-    if (Get.isRegistered<ItineraryController>()) {
-      Get.find<ItineraryController>().refreshAll();
-    }
+    FocusManager.instance.primaryFocus?.unfocus();
     Get.back(result: _createdTrip);
-    HelperUtils.backToMain(tab: 1);
+    if (Get.isRegistered<MainPageController>()) {
+      Get.find<MainPageController>().changePage(1);
+    }
   }
 
   @override
   void onClose() {
-    titleController.dispose();
-    startingPlaceController.dispose();
-    startingCountryController.dispose();
-    destinedPlaceController.dispose();
-    destinedCountryController.dispose();
-    startDateController.dispose();
-    endDateController.dispose();
+    FocusManager.instance.primaryFocus?.unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      titleController.dispose();
+      startingPlaceController.dispose();
+      startingCountryController.dispose();
+      destinedPlaceController.dispose();
+      destinedCountryController.dispose();
+      startDateController.dispose();
+      endDateController.dispose();
+    });
     super.onClose();
   }
 }
+

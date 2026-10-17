@@ -10,11 +10,11 @@ import '../controllers/main_page_controller.dart';
 class MainPageBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<MainPageController>(() => MainPageController());
-    Get.lazyPut<HomeController>(() => HomeController());
-    Get.lazyPut<ItineraryController>(() => ItineraryController());
-    Get.lazyPut<ArchiveController>(() => ArchiveController());
-    Get.lazyPut<ProductsController>(() => ProductsController());
-    Get.lazyPut<ProfileController>(() => ProfileController());
+    Get.lazyPut<MainPageController>(() => MainPageController(), fenix: true);
+    Get.lazyPut<HomeController>(() => HomeController(), fenix: true);
+    Get.lazyPut<ItineraryController>(() => ItineraryController(), fenix: true);
+    Get.lazyPut<ArchiveController>(() => ArchiveController(), fenix: true);
+    Get.lazyPut<ProductsController>(() => ProductsController(), fenix: true);
+    Get.lazyPut<ProfileController>(() => ProfileController(), fenix: true);
   }
 }

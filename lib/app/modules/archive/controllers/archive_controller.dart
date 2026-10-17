@@ -1,95 +1,174 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:adventureme/app/core/network/handle_exceptions.dart';
+import 'package:adventureme/app/data/models/feed_models/feed_model.dart';
+import 'package:adventureme/app/data/repositories/feed_repository.dart';
 import 'package:adventureme/app/routes/app_pages.dart';
 
-enum ArchiveSort { all, oldest, newest }
-
-class ArchiveStory {
-  const ArchiveStory({
-    required this.id,
-    required this.title,
-    required this.location,
-    required this.dateRange,
-    required this.views,
-    required this.imageUrl,
-    required this.authorName,
-    required this.authorAvatar,
-  });
-
-  final String id;
-  final String title;
-  final String location;
-  final String dateRange;
-  final String views;
-  final String imageUrl;
-  final String authorName;
-  final String authorAvatar;
-}
+import '../widgets/feed_filter_bottom_sheet.dart';
 
 class ArchiveController extends GetxController {
+  final IFeedRepository _feedRepository = Get.find<IFeedRepository>();
+
+  // ── Search ───────────────────────────────────────────
   final searchController = TextEditingController();
-  final searchQuery = ''.obs;
+  final activeSearch = ''.obs;
 
-  final selectedSort = ArchiveSort.all.obs;
-  final bookmarkedIds = <String>{'story_2', 'story_3'}.obs;
+  // ── Filter State ─────────────────────────────────────
+  final selectedFilter = 'recent'.obs; // 'recent' | 'all' | 'completed'
+  final selectedStatus = Rxn<String>(); // null | 'COMPLETED' | 'ACTIVE' | 'PENDING'
+  final selectedHasStory = Rxn<bool>(); // null | true | false
 
-  void changeSort(ArchiveSort sort) => selectedSort.value = sort;
+  bool get isFilterActive =>
+      selectedFilter.value != 'recent' ||
+      selectedStatus.value != null ||
+      selectedHasStory.value != null;
 
-  void onSearchChanged(String value) => searchQuery.value = value;
+  // ── Feed List & Pagination State ─────────────────────
+  final items = <FeedItem>[].obs;
+  final isLoading = false.obs;
+  final isLoadingMore = false.obs;
+  final hasNextPage = true.obs;
+  String? nextCursor;
 
-  bool isBookmarked(String id) => bookmarkedIds.contains(id);
+  final hasError = false.obs;
+  final errorMessage = ''.obs;
 
-  void toggleBookmark(String id) {
-    if (bookmarkedIds.contains(id)) {
-      bookmarkedIds.remove(id);
+  final scrollController = ScrollController();
+  final bookmarkedIds = <String>{}.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchFeed(refresh: true);
+  }
+
+  void loadMore() {
+    if (!hasNextPage.value ||
+        isLoading.value ||
+        isLoadingMore.value ||
+        items.isEmpty) {
+      return;
+    }
+    fetchFeed();
+  }
+
+  // ── Search Action ────────────────────────────────────
+  void onSearch() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final query = searchController.text.trim();
+    activeSearch.value = query;
+    fetchFeed(refresh: true);
+  }
+
+  // ── Filter Actions ───────────────────────────────────
+  void openFilterSheet() {
+    FeedFilterBottomSheet.show(Get.context!);
+  }
+
+  void applyFilters({
+    required String filter,
+    String? status,
+    bool? hasStory,
+  }) {
+    selectedFilter.value = filter;
+    selectedStatus.value = status;
+    selectedHasStory.value = hasStory;
+    fetchFeed(refresh: true);
+  }
+
+  void resetFilters() {
+    selectedFilter.value = 'recent';
+    selectedStatus.value = null;
+    selectedHasStory.value = null;
+    fetchFeed(refresh: true);
+  }
+
+  // ── Fetch Feed API ───────────────────────────────────
+  Future<void> fetchFeed({bool refresh = false}) async {
+    if (refresh) {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+      nextCursor = null;
+      hasNextPage.value = true;
     } else {
-      bookmarkedIds.add(id);
+      if (!hasNextPage.value || isLoadingMore.value || isLoading.value) return;
+      isLoadingMore.value = true;
+    }
+
+    try {
+      final response = await _feedRepository.getFeed(
+        cursor: refresh ? null : nextCursor,
+        limit: 10,
+        filter: selectedFilter.value,
+        search: activeSearch.value.isNotEmpty ? activeSearch.value : null,
+        status: selectedStatus.value,
+        hasStory: selectedHasStory.value,
+      );
+
+      if (response.success == true && response.data != null) {
+        final newItems = response.data!.items;
+        if (refresh) {
+          items.assignAll(newItems);
+        } else {
+          items.addAll(newItems);
+        }
+
+        // Initialize bookmark state
+        for (final item in newItems) {
+          if (item.isBookmark || item.isSaved) {
+            bookmarkedIds.add(item.id);
+          }
+        }
+
+        nextCursor = response.data?.meta?.nextCursor;
+        hasNextPage.value = response.data?.meta?.hasNextPage ?? false;
+      } else {
+        if (refresh) {
+          hasError.value = true;
+          errorMessage.value = response.message ?? 'Unable to retrieve feed.';
+        }
+      }
+    } catch (e) {
+      if (refresh) {
+        hasError.value = true;
+        errorMessage.value = 'Unable to connect. Please try again.';
+      }
+      handleException(e, context: 'Feed List');
+    } finally {
+      if (refresh) {
+        isLoading.value = false;
+      } else {
+        isLoadingMore.value = false;
+      }
     }
   }
 
-  void onShare(ArchiveStory story) {}
-  void onStoryTap(ArchiveStory story) =>
-      Get.toNamed(Routes.ARCHIVE_DETAILS, arguments: story);
-  void onNotifications() => Get.toNamed(Routes.NOTIFICATIONS);
+  // ── Item Actions ─────────────────────────────────────
+  bool isBookmarked(String id) => bookmarkedIds.contains(id);
 
-  final stories = const <ArchiveStory>[
-    ArchiveStory(
-      id: 'story_1',
-      title: 'Florida Beach, A Heaven with your Favorite!',
-      location: 'Miami, Florida',
-      dateRange: 'Mar 10 to Mar 17, 2026',
-      views: '34k',
-      imageUrl:
-          'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
-      authorName: 'Jack Kargille',
-      authorAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    ),
-    ArchiveStory(
-      id: 'story_2',
-      title: 'Seminyak Bali, The Best Trip with Friends!',
-      location: 'Seminyak, Bali',
-      dateRange: 'Mar 10 to Mar 17, 2026',
-      views: '23k',
-      imageUrl:
-          'https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=800',
-      authorName: 'Jack Kargille',
-      authorAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    ),
-    ArchiveStory(
-      id: 'story_3',
-      title: '101 Places in Japan to Feel Emotions!',
-      location: 'Tokyo, Japan',
-      dateRange: 'Mar 10 to Mar 17, 2026',
-      views: '18k',
-      imageUrl:
-          'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800',
-      authorName: 'Jack Kargille',
-      authorAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    ),
-  ];
+  void toggleBookmark(FeedItem item) {
+    if (bookmarkedIds.contains(item.id)) {
+      bookmarkedIds.remove(item.id);
+    } else {
+      bookmarkedIds.add(item.id);
+    }
+  }
+
+  void onShare(FeedItem story) {
+    // Can trigger share or copy share token
+  }
+
+  void onStoryTap(FeedItem story) {
+    Get.toNamed(Routes.ARCHIVE_DETAILS, arguments: story);
+  }
+
+  void onNotifications() => Get.toNamed(Routes.NOTIFICATIONS);
 
   @override
   void onClose() {
+    scrollController.dispose();
     searchController.dispose();
     super.onClose();
   }

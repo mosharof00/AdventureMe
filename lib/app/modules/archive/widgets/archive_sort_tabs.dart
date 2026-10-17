@@ -18,21 +18,33 @@ class ArchiveSortTabs extends GetView<ArchiveController> {
         () => Row(
           children: [
             _SortChip(
+              label: 'Recent',
+              isActive: controller.selectedFilter.value == 'recent',
+              onTap: () => controller.applyFilters(
+                filter: 'recent',
+                status: controller.selectedStatus.value,
+                hasStory: controller.selectedHasStory.value,
+              ),
+            ),
+            10.horizontalSpace,
+            _SortChip(
               label: 'All',
-              isActive: controller.selectedSort.value == ArchiveSort.all,
-              onTap: () => controller.changeSort(ArchiveSort.all),
+              isActive: controller.selectedFilter.value == 'all',
+              onTap: () => controller.applyFilters(
+                filter: 'all',
+                status: controller.selectedStatus.value,
+                hasStory: controller.selectedHasStory.value,
+              ),
             ),
             10.horizontalSpace,
             _SortChip(
-              label: 'Oldest',
-              isActive: controller.selectedSort.value == ArchiveSort.oldest,
-              onTap: () => controller.changeSort(ArchiveSort.oldest),
-            ),
-            10.horizontalSpace,
-            _SortChip(
-              label: 'Newest',
-              isActive: controller.selectedSort.value == ArchiveSort.newest,
-              onTap: () => controller.changeSort(ArchiveSort.newest),
+              label: 'Completed',
+              isActive: controller.selectedFilter.value == 'completed',
+              onTap: () => controller.applyFilters(
+                filter: 'completed',
+                status: controller.selectedStatus.value,
+                hasStory: controller.selectedHasStory.value,
+              ),
             ),
           ],
         ),

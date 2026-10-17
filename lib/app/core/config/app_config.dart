@@ -1,5 +1,3 @@
-import '../../../gen/assets.gen.dart';
-
 class AppConfig {
   /// Logo
   static String appLogo = "assets/logos/app_icon.png";

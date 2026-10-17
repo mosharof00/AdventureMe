@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:adventureme/app/core/extensions/text_style_extension.dart';
 import 'package:adventureme/app/core/theme/app_color.dart';
-import 'package:adventureme/app/global/widgets/app_text.dart';
 import 'package:adventureme/app/global/widgets/global_button.dart';
 
 import '../controllers/onboarding_controller.dart';
@@ -61,7 +59,6 @@ class _OnboardingBottomBar extends GetView<OnboardingController> {
                   width: 200.w,
                 ),
               ),
-              // _NextButton(),
             ],
           ),
         ),
@@ -94,42 +91,6 @@ class _DotStepper extends GetView<OnboardingController> {
             ),
           );
         }),
-      ),
-    );
-  }
-}
-
-class _NextButton extends GetView<OnboardingController> {
-  const _NextButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: controller.nextPage,
-        borderRadius: BorderRadius.circular(30.r),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 36.w, vertical: 14.h),
-          decoration: BoxDecoration(
-            color: AppColor.secondary,
-            borderRadius: BorderRadius.circular(30.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppColor.secondary.withValues(alpha: 0.35),
-                blurRadius: 12.r,
-                offset: Offset(0, 4.h),
-              ),
-            ],
-          ),
-          child: AppText(
-            'Next',
-            style: context.titleMedium.copyWith(
-              color: AppColor.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
       ),
     );
   }

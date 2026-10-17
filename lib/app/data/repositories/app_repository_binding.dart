@@ -5,6 +5,8 @@ import 'package:adventureme/app/core/services/permission_service.dart';
 import 'package:adventureme/app/core/services/photo_viewer_service.dart';
 import 'package:adventureme/app/core/services/trip_prompt_service.dart';
 import 'auth_repository.dart';
+import 'feed_repository.dart';
+import 'home_repository.dart';
 import 'product_repository.dart';
 import 'trip_repository.dart';
 
@@ -34,6 +36,16 @@ class AppRepositoryBinding extends Bindings {
 
     Get.lazyPut<ITripRepository>(
           () => TripRepository(Get.find<ApiClient>()),
+      fenix: true,
+    );
+
+    Get.lazyPut<IHomeRepository>(
+          () => HomeRepository(Get.find<ApiClient>()),
+      fenix: true,
+    );
+
+    Get.lazyPut<IFeedRepository>(
+          () => FeedRepository(Get.find<ApiClient>()),
       fenix: true,
     );
 

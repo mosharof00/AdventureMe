@@ -22,24 +22,52 @@ class HomeView extends GetView<HomeController> {
       width: double.infinity,
       height: double.infinity,
       decoration: const BoxDecoration(gradient: AppGradient.appBgGradient),
-      child: SingleChildScrollView(
-        padding: EdgeInsets.only(bottom: 24.h),
-        child: Column(
-          children: [
-            const HomeHeader(),
-            24.height,
-            const OnThisDaySection(),
-            24.height,
-            const LatestStorySection(),
-            24.height,
-            const CountryExploredSection(),
-            24.height,
-            const StoryUnfoldingCard(),
-            24.height,
-            const CurrentItinerarySection(),
-            24.height,
-            const UpcomingItinerarySection(),
-          ],
+      child: RefreshIndicator(
+        onRefresh: controller.refreshHome,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.only(bottom: 24.h),
+          child: Column(
+            children: [
+              const HomeHeader(),
+              Obx(() => controller.hasOnThisDayMemory
+                  ? Column(
+                      children: [
+                        24.height,
+                        const OnThisDaySection(),
+                      ],
+                    )
+                  : const SizedBox.shrink()),
+              Obx(() => controller.hasLatestStory
+                  ? Column(
+                      children: [
+                        24.height,
+                        const LatestStorySection(),
+                      ],
+                    )
+                  : const SizedBox.shrink()),
+              24.height,
+              const CountryExploredSection(),
+              24.height,
+              const StoryUnfoldingCard(),
+              Obx(() => controller.hasCurrentItinerary
+                  ? Column(
+                      children: [
+                        24.height,
+                        const CurrentItinerarySection(),
+                      ],
+                    )
+                  : const SizedBox.shrink()),
+              Obx(() => controller.hasUpcomingItinerary
+                  ? Column(
+                      children: [
+                        24.height,
+                        const UpcomingItinerarySection(),
+                      ],
+                    )
+                  : const SizedBox.shrink()),
+            ],
+          ),
         ),
       ),
     );

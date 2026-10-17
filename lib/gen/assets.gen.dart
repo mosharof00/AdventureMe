@@ -62,6 +62,12 @@ class $AssetsIconsGen {
   /// File path: assets/icons/email_fill_icon.svg
   String get emailFillIcon => 'assets/icons/email_fill_icon.svg';
 
+  /// File path: assets/icons/feed_fill_icon.svg
+  String get feedFillIcon => 'assets/icons/feed_fill_icon.svg';
+
+  /// File path: assets/icons/feed_icon.svg
+  String get feedIcon => 'assets/icons/feed_icon.svg';
+
   /// File path: assets/icons/filter_icon.svg
   String get filterIcon => 'assets/icons/filter_icon.svg';
 
@@ -162,6 +168,8 @@ class $AssetsIconsGen {
     diamondIcon,
     editIcon,
     emailFillIcon,
+    feedFillIcon,
+    feedIcon,
     filterIcon,
     flashIcon,
     galleryIcon,

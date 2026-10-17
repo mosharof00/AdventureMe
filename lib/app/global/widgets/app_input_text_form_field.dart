@@ -88,6 +88,9 @@ class AppInputTextFormField extends StatelessWidget {
     this.style,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
     this.labelSpacing = 8,
+    this.textInputAction,
+    this.onFieldSubmitted,
+    this.focusNode,
   });
 
   final String? label;
@@ -117,6 +120,9 @@ class AppInputTextFormField extends StatelessWidget {
   final TextStyle? style;
   final AutovalidateMode autovalidateMode;
   final double labelSpacing;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -124,6 +130,9 @@ class AppInputTextFormField extends StatelessWidget {
       readOnly: readOnly,
       onTap: onTap,
       controller: controller,
+      focusNode: focusNode,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onFieldSubmitted,
       initialValue: controller == null ? initialValue : null,
       cursorColor: cursorColor ?? AppColor.primary,
       autovalidateMode: autovalidateMode,

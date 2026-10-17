@@ -15,86 +15,102 @@ class OnThisDaySection extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const HomeSectionHeader(title: 'On This Day'),
-        12.height,
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: 20.w),
-          padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
-            color: AppColor.bgGradient2.withAlpha(10),
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CachedImage(
-                imgUrl: controller.onThisDayImage,
-                width: 88.w,
-                height: 88.w,
-                borderRadius: 12.r,
-                fit: BoxFit.cover,
-              ),
-              12.width,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          size: 12.sp,
-                          color: AppColor.hintText,
+    return Obx(() {
+      if (!controller.hasOnThisDayMemory) {
+        return const SizedBox.shrink();
+      }
+
+      final hasDate = controller.onThisDayDate.isNotEmpty;
+      final hasTitle = controller.onThisDayTitle.isNotEmpty;
+      final hasDesc = controller.onThisDayDesc.isNotEmpty;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const HomeSectionHeader(title: 'On This Day'),
+          12.height,
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 20.w),
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: AppColor.bgGradient2.withAlpha(10),
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CachedImage(
+                  imgUrl: controller.onThisDayImage,
+                  width: 88.w,
+                  height: 88.w,
+                  borderRadius: 12.r,
+                  fit: BoxFit.cover,
+                ),
+                12.width,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (hasDate) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 12.sp,
+                              color: AppColor.hintText,
+                            ),
+                            4.width,
+                            AppText(
+                              controller.onThisDayDate,
+                              style: context.labelSmall.copyWith(
+                                color: AppColor.hintText,
+                              ),
+                            ),
+                          ],
                         ),
-                        4.width,
+                        6.height,
+                      ],
+                      if (hasTitle) ...[
                         AppText(
-                          controller.onThisDayDate,
-                          style: context.labelSmall.copyWith(
+                          controller.onThisDayTitle,
+                          style: context.titleSmall.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColor.primary,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                        ),
+                        4.height,
+                      ],
+                      if (hasDesc) ...[
+                        AppText(
+                          controller.onThisDayDesc,
+                          style: context.bodySmall.copyWith(
                             color: AppColor.hintText,
                           ),
+                          maxLines: 2,
                         ),
+                        8.height,
                       ],
-                    ),
-                    6.height,
-                    AppText(
-                      controller.onThisDayTitle,
-                      style: context.titleSmall.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColor.primary,
-                        height: 1.3,
-                      ),
-                      maxLines: 2,
-                    ),
-                    4.height,
-                    AppText(
-                      controller.onThisDayDesc,
-                      style: context.bodySmall.copyWith(
-                        color: AppColor.hintText,
-                      ),
-                      maxLines: 1,
-                    ),
-                    8.height,
-                    GestureDetector(
-                      onTap: controller.onViewDetails,
-                      child: AppText(
-                        'View Details →',
-                        style: context.bodySmall.copyWith(
-                          color: AppColor.primary,
-                          fontWeight: FontWeight.w600,
+                      GestureDetector(
+                        onTap: controller.onViewDetails,
+                        child: AppText(
+                          'View Details →',
+                          style: context.bodySmall.copyWith(
+                            color: AppColor.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }

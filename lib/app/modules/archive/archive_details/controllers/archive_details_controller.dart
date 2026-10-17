@@ -1,5 +1,27 @@
 import 'package:get/get.dart';
-import 'package:adventureme/app/modules/archive/controllers/archive_controller.dart';
+import 'package:adventureme/app/data/models/feed_models/feed_model.dart';
+
+class ArchiveStory {
+  const ArchiveStory({
+    required this.id,
+    required this.title,
+    required this.location,
+    required this.dateRange,
+    required this.views,
+    required this.imageUrl,
+    required this.authorName,
+    required this.authorAvatar,
+  });
+
+  final String id;
+  final String title;
+  final String location;
+  final String dateRange;
+  final String views;
+  final String imageUrl;
+  final String authorName;
+  final String authorAvatar;
+}
 
 class ArchiveSummaryItem {
   const ArchiveSummaryItem({required this.label, required this.value});
@@ -30,14 +52,18 @@ class ArchiveStorySection {
 
 class ArchiveDetailsController extends GetxController {
   ArchiveStory? story;
+  FeedItem? feedItem;
 
   final isSummaryExpanded = true.obs;
 
   bool isVerified = true;
 
-  String get authorName => story?.authorName ?? 'Jack Kargille';
+  String get authorName =>
+      feedItem?.author?.name ?? story?.authorName ?? 'Jack Kargille';
   String get authorAvatar =>
-      story?.authorAvatar ?? 'https://randomuser.me/api/portraits/men/32.jpg';
+      feedItem?.author?.avatarUrl ??
+      story?.authorAvatar ??
+      'https://randomuser.me/api/portraits/men/32.jpg';
 
   final summaryItems = const [
     ArchiveSummaryItem(
@@ -85,7 +111,21 @@ class ArchiveDetailsController extends GetxController {
   void onInit() {
     super.onInit();
     final args = Get.arguments;
-    if (args is ArchiveStory) story = args;
+    if (args is FeedItem) {
+      feedItem = args;
+      story = ArchiveStory(
+        id: args.id,
+        title: args.title,
+        location: args.placeDisplay ?? '',
+        dateRange: args.dateRangeDisplay ?? '',
+        views: args.viewsDisplay ?? '${args.viewsCount ?? 0}',
+        imageUrl: args.coverUrl ?? '',
+        authorName: args.author?.name ?? '',
+        authorAvatar: args.author?.avatarUrl ?? '',
+      );
+    } else if (args is ArchiveStory) {
+      story = args;
+    }
   }
 
   void toggleSummary() => isSummaryExpanded.toggle();

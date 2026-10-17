@@ -18,136 +18,153 @@ class LatestStorySection extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        HomeSectionHeader(
-          title: 'Your Latest Story',
-          showViewAll: true,
-          onViewAll: controller.onViewAll,
-        ),
-        12.height,
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: 20.w),
-          height: 160.h,
-          decoration: BoxDecoration(
-            color: homeTeal,
-            borderRadius: BorderRadius.circular(16.r),
+    return Obx(() {
+      if (!controller.hasLatestStory) {
+        return const SizedBox.shrink();
+      }
+
+      final hasCover = controller.latestStoryImage.isNotEmpty;
+      final hasDate = controller.latestStoryDate.isNotEmpty;
+      final hasReadTime = controller.latestStoryReadTime.isNotEmpty;
+      final hasStatus = controller.latestStoryStatus.isNotEmpty;
+
+      return Column(
+        children: [
+          HomeSectionHeader(
+            title: 'Your Latest Story',
+            showViewAll: true,
+            onViewAll: controller.onViewAll,
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Row(
-            children: [
-              Expanded(
-                flex: 5,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CachedImage(
-                      imgUrl: controller.latestStoryImage,
-                      fit: BoxFit.cover,
-                    ),
-                    Positioned(
-                      top: 10.h,
-                      left: 10.w,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 4.h,
+          12.height,
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 20.w),
+            height: 160.h,
+            decoration: BoxDecoration(
+              color: homeTeal,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Row(
+              children: [
+                if (hasCover)
+                  Expanded(
+                    flex: 5,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CachedImage(
+                          imgUrl: controller.latestStoryImage,
+                          fit: BoxFit.cover,
                         ),
-                        decoration: BoxDecoration(
-                          color: homeTeal,
-                          borderRadius: BorderRadius.circular(20.r),
-                        ),
-                        child: AppText(
-                          controller.latestStoryStatus,
-                          style: context.labelSmall.copyWith(
-                            color: AppColor.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 6,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 10.h),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText(
-                        controller.latestStoryTitle,
-                        style: context.titleSmall.copyWith(
-                          color: AppColor.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 2,
-                      ),
-                      6.height,
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 11.sp,
-                            color: AppColor.white.withValues(alpha: 0.9),
-                          ),
-                          3.width,
-                          Flexible(
-                            child: AppText(
-                              controller.latestStoryDate,
-                              style: context.labelSmall.copyWith(
-                                color: AppColor.white.withValues(alpha: 0.9),
-                                fontSize: 10.sp,
+                        if (hasStatus)
+                          Positioned(
+                            top: 10.h,
+                            left: 10.w,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10.w,
+                                vertical: 4.h,
                               ),
-                              maxLines: 1,
+                              decoration: BoxDecoration(
+                                color: homeTeal,
+                                borderRadius: BorderRadius.circular(20.r),
+                              ),
+                              child: AppText(
+                                controller.latestStoryStatus,
+                                style: context.labelSmall.copyWith(
+                                  color: AppColor.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
-                          6.width,
-                          Icon(
-                            Icons.access_time_rounded,
-                            size: 11.sp,
-                            color: AppColor.white.withValues(alpha: 0.9),
+                      ],
+                    ),
+                  ),
+                Expanded(
+                  flex: 6,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 10.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          controller.latestStoryTitle,
+                          style: context.titleSmall.copyWith(
+                            color: AppColor.white,
+                            fontWeight: FontWeight.w700,
                           ),
-                          3.width,
-                          AppText(
-                            controller.latestStoryReadTime,
+                          maxLines: 2,
+                        ),
+                        6.height,
+                        Row(
+                          children: [
+                            if (hasDate) ...[
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 11.sp,
+                                color: AppColor.white.withValues(alpha: 0.9),
+                              ),
+                              3.width,
+                              Flexible(
+                                child: AppText(
+                                  controller.latestStoryDate,
+                                  style: context.labelSmall.copyWith(
+                                    color: AppColor.white.withValues(alpha: 0.9),
+                                    fontSize: 10.sp,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                              ),
+                              6.width,
+                            ],
+                            if (hasReadTime) ...[
+                              Icon(
+                                Icons.access_time_rounded,
+                                size: 11.sp,
+                                color: AppColor.white.withValues(alpha: 0.9),
+                              ),
+                              3.width,
+                              AppText(
+                                controller.latestStoryReadTime,
+                                style: context.labelSmall.copyWith(
+                                  color: AppColor.white.withValues(alpha: 0.9),
+                                  fontSize: 10.sp,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        6.height,
+                        Expanded(
+                          child: AppText(
+                            controller.latestStoryDesc,
                             style: context.labelSmall.copyWith(
                               color: AppColor.white.withValues(alpha: 0.9),
-                              fontSize: 10.sp,
+                              height: 1.35,
+                            ),
+                            maxLines: 3,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: controller.onOpenStory,
+                          child: AppText(
+                            'Open Story →',
+                            style: context.bodySmall.copyWith(
+                              color: AppColor.white,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ],
-                      ),
-                      6.height,
-                      Expanded(
-                        child: AppText(
-                          controller.latestStoryDesc,
-                          style: context.labelSmall.copyWith(
-                            color: AppColor.white.withValues(alpha: 0.9),
-                            height: 1.35,
-                          ),
-                          maxLines: 3,
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: controller.onOpenStory,
-                        child: AppText(
-                          'Open Story →',
-                          style: context.bodySmall.copyWith(
-                            color: AppColor.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }
